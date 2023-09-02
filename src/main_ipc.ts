@@ -32,7 +32,7 @@ export interface MainIpc<
   ) => void
 
   /**
-   * Calls.
+   * Makes a call.
    */
   call: <
     Calls extends RenderersActions['calls'],

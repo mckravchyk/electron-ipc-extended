@@ -40,59 +40,59 @@ const testMessage = 'testMessage';
 const testListener = () => { };
 
 describe('MainIpc', () => {
-  test('.send() calls WebContents.send()', () => {
+  it('sends an event with WebContents.send', () => {
     const webContents = { send: jest.fn() } as unknown as WebContents;
     mainIpc.send(webContents, testChannel, testMessage);
     expect(webContents.send).toHaveBeenCalledWith(testChannel, testMessage);
   });
 
-  test('.call() calls WebContents.send()', () => {
+  it('makes a call with WebContents.send', () => {
     const webContents = { send: jest.fn() } as unknown as WebContents;
     mainIpc.call(webContents, testChannel, testMessage);
     expect(webContents.send).toHaveBeenCalledWith(testChannel, testMessage);
   });
 
-  test('.on() calls IpcMain.on()', () => {
+  it('listens to an event with IpcMain.on', () => {
     mainIpc.on(testChannel, testListener);
     expect(mocks.on).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
-  test('.once() calls IpcMain.once()', () => {
+  it('listens to an event once with IpcMain.once', () => {
     mainIpc.once(testChannel, testListener);
     expect(mocks.once).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
-  test('.receive() calls IpcMain.on()', () => {
+  it('receives a call with ipcMain.on', () => {
     mainIpc.receive(testChannel, testListener);
     expect(mocks.on).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
-  test('.receiveOnce() calls IpcMain.once()', () => {
+  it('receives a call once with ipcMain.once', () => {
     mainIpc.receiveOnce(testChannel, testListener);
     expect(mocks.once).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
-  test('.handle() calls IpcMain.handle()', () => {
+  it('handles a command with IpcMain.handle', () => {
     mainIpc.handle(testChannel, testListener);
     expect(mocks.handle).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
-  test('.handleOnce() calls IpcMain.handleOnce()', () => {
+  it('handles a command once with IpcMain.handleOnce', () => {
     mainIpc.handleOnce(testChannel, testListener);
     expect(mocks.handleOnce).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
-  test('.removeListener() calls IpcMain.removeListener()', () => {
+  it('removes an event listener with ipcMain.removeListener', () => {
     mainIpc.removeListener(testChannel, testListener);
     expect(mocks.removeListener).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
-  test('.removeReceiver() calls IpcMain.removeListener()', () => {
+  it('removes a call receiver with ipcMain.removeListener', () => {
     mainIpc.removeReceiver(testChannel, testListener);
     expect(mocks.removeListener).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
-  test('.removeHandler() calls IpcMain.removeHandler()', () => {
+  it('removes a command handler with ipcMain.removeHandler', () => {
     mainIpc.removeHandler(testChannel);
     expect(mocks.removeHandler).toHaveBeenCalledWith(ipcMain, testChannel);
   });

@@ -17,28 +17,28 @@ const testMessage = 'test';
 const testListener = () => { };
 
 describe('RendererIpc', () => {
-  test('.send() calls IpcRenderer.send()', () => {
+  it('sends an event with ipcRenderer.send', () => {
     rendererIpc.send(testChannel, testMessage);
     expect(ipcRenderer.send).toHaveBeenCalledWith(testChannel, testMessage);
   });
 
-  test('.call() calls IpcRenderer.call()', () => {
+  it('makes a call with ipcRenderer.send', () => {
     rendererIpc.call(testChannel, testMessage);
     expect(ipcRenderer.send).toHaveBeenCalledWith(testChannel, testMessage);
   });
 
-  test('.invoke() calls IpcRenderer.invoke()', () => {
+  it('invokes a command with ipcRenderer.invoke', () => {
     void rendererIpc.invoke(testChannel, testMessage);
     expect(ipcRenderer.invoke).toHaveBeenCalledWith(testChannel, testMessage);
   });
 
-  test('.on() calls IpcRenderer.on()', () => {
+  it('listens to an event with ipcRenderer.on', () => {
     rendererIpc.on(testChannel, testListener);
     // Note that the listener is wrapped in another function so toHaveBennCalledWith cannot be used.
     expect(ipcRenderer.on).toHaveBeenCalled();
   });
 
-  test('.receive calls IpcRenderer.receive()', () => {
+  it('receives a call with ipcRenderer.on', () => {
     rendererIpc.receive(testChannel, testListener);
     expect(ipcRenderer.on).toHaveBeenCalled();
   });

@@ -28,7 +28,7 @@ export interface RendererIpc<RendererActions extends IpcActions, MpActions exten
   ) => void
 
   /**
-   * Calls.
+   * Makes a call.
    */
   call: <
     Calls extends MpActions['calls'],
