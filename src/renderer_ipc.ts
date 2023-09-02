@@ -28,20 +28,20 @@ export interface RendererIpc<RendererActions extends IpcActions, MpActions exten
   ) => void
 
   /**
-    * Calls an (unawaitable) command.
-    */
+   * Calls.
+   */
   call: <
-    Commands extends MpActions['commands'],
-    Command extends (Commands extends IpcActionDomain ? keyof Commands : never),
-    Args extends (Commands[Command] extends unknown[] ? Commands[Command] : unknown[])
+    Calls extends MpActions['calls'],
+    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
   >(
-    command: Command,
+    channel: Channel,
     ...args: Args
   ) => void
 
   /**
-    * Invokes an awaitable command.
-    */
+   * Invokes an awaitable command.
+   */
   invoke: <
     Commands extends MpActions['awaitableCommands'],
     Command extends (Commands extends IpcInvokeActionDomain ? keyof Commands : never),
@@ -65,14 +65,14 @@ export interface RendererIpc<RendererActions extends IpcActions, MpActions exten
   ) => void
 
   /**
-   * Receives an (unawaitable) command.
+   * Receives a call.
    */
   receive: <
-    Commands extends RendererActions['commands'],
-    Command extends (Commands extends IpcActionDomain ? keyof Commands : never),
-    Args extends (Commands[Command] extends unknown[] ? Commands[Command] : unknown[])
+    Calls extends RendererActions['calls'],
+    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
   >(
-    command: Command,
+    channel: Channel,
     receiver: (event: IpcRendererEvent, ...args: Args) => void
   ) => void
 

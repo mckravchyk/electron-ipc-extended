@@ -32,15 +32,15 @@ export interface MainIpc<
   ) => void
 
   /**
-   * Calls an (unawaitable) command.
+   * Calls.
    */
   call: <
-    Commands extends RenderersActions['commands'],
-    Command extends (Commands extends IpcActionDomain ? keyof Commands : never),
-    Args extends (Commands[Command] extends unknown[] ? Commands[Command] : unknown[])
+    Calls extends RenderersActions['calls'],
+    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
   >(
     webContents: WebContents,
-    command: Command,
+    channel: Channel,
     ...args: Args
   ) => void
 
@@ -69,23 +69,23 @@ export interface MainIpc<
   ) => void
 
   /**
-   * Receives an (unawaitable) command.
+   * Receives a call.
    */
   receive: <
-    Commands extends MpActions['commands'],
-    Command extends (Commands extends IpcActionDomain ? keyof Commands : never),
-    Args extends (Commands[Command] extends unknown[] ? Commands[Command] : unknown[])
+    Calls extends MpActions['calls'],
+    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
   >(
-    command: Command,
+    channel: Channel,
     receiver: (event: IpcMainEvent, ...args: Args) => void
   ) => IpcMain
 
   receiveOnce: <
-    Commands extends MpActions['commands'],
-    Command extends (Commands extends IpcActionDomain ? keyof Commands : never),
-    Args extends (Commands[Command] extends unknown[] ? Commands[Command] : unknown[])
+    Calls extends MpActions['calls'],
+    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
   >(
-    command: Command,
+    channel: Channel,
     receiver: (event: IpcMainEvent, ...args: Args) => void
   ) => IpcMain
 
@@ -125,14 +125,14 @@ export interface MainIpc<
   ) => void
 
   /**
-   * Removes a receiver of an (unawaitable) command.
+   * Removes a receiver of a call.
    */
   removeReceiver: <
-    Commands extends MpActions['commands'],
-    Command extends (Commands extends IpcActionDomain ? keyof Commands : never),
-    Args extends (Commands[Command] extends unknown[] ? Commands[Command] : unknown[])
+    Calls extends MpActions['calls'],
+    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
   >(
-    command: Command,
+    channel: Channel,
     receiver: (event: IpcMainEvent, ...args: Args) => void
   ) => void
 

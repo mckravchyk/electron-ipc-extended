@@ -9,8 +9,8 @@ export type IpcActionParameters = unknown[];
 
 /**
  * A record of event channel / command name as key and action parameters as value. To avoid
- * confusion, it is recommanded to prefix the channels with the name of the emitter (for events)
- * or receiver (for commands) - i.e. 'renderer/tabs/create', 'main/tabs/handleCreate',
+ * confusion, it is recommended to prefix the channels with the name of the emitter (for events)
+ * or receiver (for calls and commands) - i.e. 'renderer/tabs/create', 'main/tabs/handleCreate',
  * 'main/tabs/didFinishLoad'.
  */
 export type IpcActionDomain = Record<string, IpcActionParameters>;
@@ -31,19 +31,19 @@ export interface IpcActions {
   events?: IpcActionDomain
 
   /**
-   * A command is a plain IPC message that is received in the target and can be called from many
-   * sources. Commands are defined by the module that handles them. Commands are called with the
+   * A call is a plain IPC message that is received in the target and can be called from many
+   * sources. Calls are defined by the module that handles them. Calls are called with the
    * `call` method and received with the `receive` method.
    *
-   * From the runtime perspective, they are identical to events. Command handling functions are just
-   * aliases for event handling functions. However, from type and definitions perspective, commands
+   * From the runtime perspective, they are identical to events. Call handling functions are just
+   * aliases for event handling functions. However, from type and definitions perspective, calls
    * are used in the same way as awaitable commands.
    *
-   * Plain (non-awaitable) commands have been introduced because ipcMain cannot invoke to
-   * renderers and not all command-type IPC actions should be awaitable. Using awaitable
-   * commands when they are not needed is an unncessary runtime overhead.
+   * Calls have been introduced because ipcMain cannot invoke to renderers and not all command-type
+   * IPC actions should be awaitable. Using awaitable commands when they are not needed is a
+   * potential unncessary runtime overhead.
    */
-  commands?: IpcActionDomain
+  calls?: IpcActionDomain
 
   /**
    * An awaitable command is handled in the target and can be invoked from multiple sources.
