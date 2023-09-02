@@ -1,0 +1,52 @@
+{
+  "name": "electron-ipc-extended",
+  "version": "0.0.1",
+  "description": "Provides cross-process type safety and clear event organization for Electron apps",
+  "author": "Maciej Krawczyk",
+  "homepage": "https://github.com/mckravchyk/electron-ipc-extended",
+  "license": "MIT",
+  "private": true,
+  "main": "./dist/electron-ipc-extended.common.js",
+  "module": "./dist/electron-ipc-extended.esm.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "lint": "eslint src test",
+    "check-types": "tsc --noemit",
+    "test": "npx jest",
+    "check": "npm run lint; npm run check-types && npm run test",
+    "build": "npx rollup -c",
+    "prepublish": "npm run check && npm run build"
+  },
+  "files": [
+    "dist/"
+  ],
+  "keywords": [
+    "electron",
+    "ipc",
+    "typed",
+    "typed-ipc",
+    "electron-typed-ipc"
+  ],
+  "peerDependencies": {
+    "electron": "^25.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.18.9",
+    "@babel/preset-env": "^7.18.9",
+    "@babel/preset-typescript": "^7.18.6",
+    "@types/jest": "^29.5.3",
+    "@typescript-eslint/eslint-plugin": "^6.1.0",
+    "@typescript-eslint/parser": "^6.1.0",
+    "babel-jest": "^29.6.1",
+    "electron": "^25.7.0",
+    "eslint": "^8.45.0",
+    "eslint-config-mckravchyk": "github:mckravchyk/eslint-config-mckravchyk",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jest": "^27.2.3",
+    "jest": "^29.6.1",
+    "rollup": "^3.26.3",
+    "rollup-plugin-typescript2": "^0.35.0",
+    "tslib": "^2.4.0",
+    "typescript": "5.1"
+  }
+}
