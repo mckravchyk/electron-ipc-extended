@@ -37,7 +37,7 @@ export interface IpcActions {
    *
    * From the runtime perspective, they are identical to events. Call handling functions are just
    * aliases for event handling functions. However, from type and definitions perspective, calls
-   * are used in the same way as awaitable commands.
+   * are used in the same way as commands.
    *
    * Calls have been introduced because ipcMain cannot invoke to renderers and not all command-type
    * IPC actions should be awaitable. Using awaitable commands when they are not needed is a
@@ -46,9 +46,9 @@ export interface IpcActions {
   calls?: IpcActionDomain
 
   /**
-   * An awaitable command is handled in the target and can be invoked from multiple sources.
-   * Awaitable commands are defined by the module that handles them. Awaitable commands are
-   * invoked with the `invoke` method and handled with the `handle` method.
+   * A command is handled in the target and can be invoked from multiple sources. Commands are
+   * defined by the module that handles them. Commands are invoked with the `invoke` method and
+   * handled with the `handle` method.
    */
-  awaitableCommands?: IpcInvokeActionDomain
+  commands?: IpcInvokeActionDomain
 }

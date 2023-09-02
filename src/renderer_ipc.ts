@@ -40,10 +40,10 @@ export interface RendererIpc<RendererActions extends IpcActions, MpActions exten
   ) => void
 
   /**
-   * Invokes an awaitable command.
+   * Invokes a command.
    */
   invoke: <
-    Commands extends MpActions['awaitableCommands'],
+    Commands extends MpActions['commands'],
     Command extends (Commands extends IpcInvokeActionDomain ? keyof Commands : never),
     Args extends(Commands[Command] extends IpcInvokeAction ? Commands[Command]['params'] : unknown[]),
     ReturnVal extends(Commands[Command] extends IpcInvokeAction ? Commands[Command]['returnVal'] : unknown)

@@ -90,10 +90,10 @@ export interface MainIpc<
   ) => IpcMain
 
   /**
-   * Handles an awaitable command.
+   * Handles a command.
    */
   handle: <
-    Commands extends MpActions['awaitableCommands'],
+    Commands extends MpActions['commands'],
     Command extends (Commands extends IpcInvokeActionDomain ? keyof Commands : never),
     Args extends(Commands[Command] extends IpcInvokeAction ? Commands[Command]['params'] : unknown[]),
     CbReturnVal extends(Commands[Command] extends IpcInvokeAction ? Commands[Command]['returnVal'] : unknown)
@@ -103,7 +103,7 @@ export interface MainIpc<
   ) => void
 
   handleOnce: <
-    Commands extends MpActions['awaitableCommands'],
+    Commands extends MpActions['commands'],
     Command extends (Commands extends IpcInvokeActionDomain ? keyof Commands : never),
     Args extends(Commands[Command] extends IpcInvokeAction ? Commands[Command]['params'] : unknown[]),
     CbReturnVal extends(Commands[Command] extends IpcInvokeAction ? Commands[Command]['returnVal'] : unknown)
@@ -137,10 +137,10 @@ export interface MainIpc<
   ) => void
 
   /**
-   * Removes a handler of an awaitable command.
+   * Removes a command handler.
    */
   removeHandler: <
-    Commands extends MpActions['awaitableCommands'],
+    Commands extends MpActions['commands'],
     Command extends (Commands extends IpcInvokeActionDomain ? keyof Commands : never),
   >(
     command: Command,
