@@ -6,7 +6,13 @@ import type {
   IpcActions,
 } from './ipc_actions';
 
-import { type MainIpc, createMainIpc } from './main_ipc';
+import {
+  type MainIpc,
+  createMainIpc,
+  type MessageTarget,
+  type FrameTarget,
+} from './main_ipc';
+
 import { type RendererIpc, createRendererIpc } from './renderer_ipc';
 
 export {
@@ -17,6 +23,8 @@ export {
   type IpcActions,
   type RendererIpc,
   type MainIpc,
+  type FrameTarget,
+  type MessageTarget,
   createMainIpc,
   createRendererIpc,
 };

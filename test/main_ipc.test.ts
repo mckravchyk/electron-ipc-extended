@@ -52,6 +52,15 @@ describe('MainIpc', () => {
     expect(webContents.send).toHaveBeenCalledWith(testChannel, testMessage);
   });
 
+  it('sends an event to a frame with WebContents.sendToFrame', () => {
+    const webContents = { sendToFrame: jest.fn() } as unknown as WebContents;
+    const frameProcessId = 1;
+    const frameId = 2;
+    const frame = [frameProcessId, frameId];
+    mainIpc.send({ webContents, frameProcessId, frameId }, testChannel, testMessage);
+    expect(webContents.sendToFrame).toHaveBeenCalledWith(frame, testChannel, testMessage);
+  });
+
   it('listens to an event with IpcMain.on', () => {
     mainIpc.on(testChannel, testListener);
     expect(mocks.on).toHaveBeenCalledWith(ipcMain, testChannel, testListener);

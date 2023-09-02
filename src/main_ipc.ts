@@ -11,6 +11,10 @@ import type {
   IpcInvokeActionDomain,
 } from './ipc_actions';
 
+export type FrameTarget = { webContents: WebContents, frameProcessId: number, frameId: number };
+
+export type MessageTarget = WebContents | FrameTarget;
+
 /**
  * A typed IPC interface to communicate with renderers.
  */
@@ -26,7 +30,7 @@ export interface MainIpc<
     Channel extends (Events extends IpcActionDomain ? keyof Events : never),
     Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
   >(
-    webContents: WebContents,
+    target: MessageTarget,
     channel: Channel,
     ...args: Args
   ) => void
@@ -39,7 +43,7 @@ export interface MainIpc<
     Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
     Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
   >(
-    webContents: WebContents,
+    target: MessageTarget,
     channel: Channel,
     ...args: Args
   ) => void
@@ -151,6 +155,21 @@ export function createMainIpc<
   MpActions extends IpcActions,
   RenderersActions extends IpcActions
 >(electronIpcMain: IpcMain): MainIpc<MpActions, RenderersActions> {
+  const send = (target: MessageTarget, channel: string, ...args: unknown[]) => {
+    if (typeof (target as FrameTarget).webContents === 'undefined') {
+      (target as WebContents).send(channel, ...args);
+      return;
+    }
+
+    const frameTarget = target as FrameTarget;
+
+    frameTarget.webContents.sendToFrame(
+      [frameTarget.frameProcessId, frameTarget.frameId],
+      channel,
+      ...args,
+    );
+  };
+
   return {
     on: electronIpcMain.on.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['on'],
     once: electronIpcMain.once.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['once'],
@@ -161,7 +180,7 @@ export function createMainIpc<
     removeListener: electronIpcMain.removeListener.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['removeListener'],
     removeReceiver: electronIpcMain.removeListener.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['removeReceiver'],
     removeHandler: electronIpcMain.removeHandler.bind(electronIpcMain),
-    send: (webContents, channel, ...args) => { webContents.send(channel, ...args); },
-    call: (webContents, channel, ...args) => { webContents.send(channel, ...args); },
+    send,
+    call: send,
   };
 }
