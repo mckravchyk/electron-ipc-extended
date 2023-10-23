@@ -9,7 +9,6 @@ import type {
 import {
   type MainIpc,
   createMainIpc,
-  type MessageTarget,
   type FrameTarget,
 } from './main_ipc';
 
@@ -24,7 +23,6 @@ export {
   type RendererIpc,
   type MainIpc,
   type FrameTarget,
-  type MessageTarget,
   createMainIpc,
   createRendererIpc,
 };

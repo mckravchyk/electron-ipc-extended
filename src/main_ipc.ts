@@ -13,8 +13,6 @@ import type {
 
 export type FrameTarget = { webContents: WebContents, frameProcessId: number, frameId: number };
 
-export type MessageTarget = WebContents | FrameTarget;
-
 /**
  * A typed IPC interface to communicate with renderers.
  */
@@ -30,7 +28,7 @@ export interface MainIpc<
     Channel extends (Events extends IpcActionDomain ? keyof Events : never),
     Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
   >(
-    target: MessageTarget,
+    target: WebContents | FrameTarget,
     channel: Channel,
     ...args: Args
   ) => void
@@ -43,7 +41,7 @@ export interface MainIpc<
     Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
     Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
   >(
-    target: MessageTarget,
+    target: WebContents | FrameTarget,
     channel: Channel,
     ...args: Args
   ) => void
@@ -155,7 +153,7 @@ export function createMainIpc<
   MpActions extends IpcActions,
   RenderersActions extends IpcActions
 >(electronIpcMain: IpcMain): MainIpc<MpActions, RenderersActions> {
-  const send = (target: MessageTarget, channel: string, ...args: unknown[]) => {
+  const send = (target: WebContents | FrameTarget, channel: string, ...args: unknown[]) => {
     if (typeof (target as FrameTarget).webContents === 'undefined') {
       (target as WebContents).send(channel, ...args);
       return;
