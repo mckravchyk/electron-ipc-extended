@@ -1,5 +1,5 @@
 import { type IpcRenderer } from 'electron';
-import { createRendererIpc } from '../src';
+import { createRendererIpc } from 'src';
 
 const ipcRenderer = {
   /* eslint-disable max-len */

@@ -5,7 +5,7 @@ import type {
   WebContents,
 } from 'electron';
 
-import { createMainIpc } from '../src';
+import { createMainIpc } from 'src';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type OnListener = (event: IpcMainEvent, ...args: any[]) => void;
