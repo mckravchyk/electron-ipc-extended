@@ -12,9 +12,13 @@
     "useDefineForClassFields": true,
     "verbatimModuleSyntax": true,
     "baseUrl": "./",
+    "paths": {
+      "electron-ipc-extended": ["src/index.ts"]
+    }
   },
   "include": [
     "./src",
+    "./examples",
     "./test",
   ],
 }

@@ -60,7 +60,7 @@ export default [
             declaration: true,
             declarationDir: './dist',
           },
-          exclude: ['./test'],
+          exclude: ['./test', './examples'],
         },
         useTsconfigDeclarationDir: true,
       }),

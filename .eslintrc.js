@@ -20,5 +20,14 @@ module.exports = {
       __dirname,
       project: ['./tsconfig.json'],
     }),
+    {
+      files: [
+        'examples/**/*.ts',
+      ],
+      rules: {
+        'no-console': 'off',
+        '@typescript-eslint/no-unused-vars': 'off',
+      },
+    },
   ],
 };
