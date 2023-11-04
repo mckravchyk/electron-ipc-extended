@@ -10,8 +10,7 @@ export type IpcActionParameters = unknown[];
 /**
  * A record of event channel / command name as key and action parameters as value. To avoid
  * confusion, it is recommended to prefix the channels with the name of the emitter (for events)
- * or receiver (for calls and commands) - i.e. 'renderer/tabs/create', 'main/tabs/handleCreate',
- * 'main/tabs/didFinishLoad'.
+ * or receiver (for calls and commands) - i.e. 'tabs/create', 'menus/open'.
  */
 export type IpcActionDomain = Record<string, IpcActionParameters>;
 

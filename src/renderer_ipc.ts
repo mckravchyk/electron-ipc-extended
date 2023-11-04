@@ -50,7 +50,7 @@ export interface RendererIpc<RendererActions extends IpcActions, MpActions exten
   >(
     command: Command,
     ...args: Args
-  ) => Promise<ReturnVal>
+  ) => ReturnVal extends Promise<unknown> ? ReturnVal : Promise<ReturnVal>
 
   /**
    * Listens for an event.
@@ -96,7 +96,7 @@ export function createRendererIpc<
   return {
     send: electronIpcRenderer.send,
     call: electronIpcRenderer.send,
-    invoke: electronIpcRenderer.invoke,
+    invoke: electronIpcRenderer.invoke as RendererIpc<RendererActions, MpActions>['invoke'],
     on: on as RendererIpc<RendererActions, MpActions>['on'],
     receive: on as RendererIpc<RendererActions, MpActions>['receive'],
   };
