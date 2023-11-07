@@ -8,7 +8,7 @@
   "private": true,
   "main": "./dist/electron-ipc-extended.common.js",
   "module": "./dist/electron-ipc-extended.esm.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/types/index.d.ts",
   "scripts": {
     "lint": "eslint src test",
     "check-types": "tsc --noemit",
