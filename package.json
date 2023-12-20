@@ -7,7 +7,19 @@
   "license": "MIT",
   "private": true,
   "main": "./dist/electron-ipc-extended.common.js",
-  "module": "./dist/electron-ipc-extended.esm.js",
+  "module": "./dist/electron-ipc-extended.mjs",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.mts",
+        "default": "./dist/electron-ipc-extended.mjs"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/electron-ipc-extended.common.js"
+      }
+    }
+  },
   "types": "./dist/types/index.d.ts",
   "scripts": {
     "lint": "eslint src test",
@@ -45,6 +57,7 @@
     "eslint-plugin-jest": "^27.2.3",
     "jest": "^29.6.1",
     "rollup": "^4.9.1",
+    "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "tslib": "^2.4.0",
     "typescript": "5.3"
