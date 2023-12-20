@@ -1,6 +1,6 @@
 {
   "name": "electron-ipc-extended",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "description": "Provides cross-process type safety and clear event organization for Electron apps",
   "author": "Maciej Krawczyk",
   "homepage": "https://github.com/mckravchyk/electron-ipc-extended",
