@@ -5,7 +5,6 @@
   "author": "Maciej Krawczyk",
   "homepage": "https://github.com/mckravchyk/electron-ipc-extended",
   "license": "MIT",
-  "private": true,
   "main": "./dist/electron-ipc-extended.common.js",
   "module": "./dist/electron-ipc-extended.mjs",
   "exports": {
