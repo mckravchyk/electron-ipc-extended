@@ -30,7 +30,11 @@
     "prepublish": "npm run check && npm run build"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "examples/",
+    "package.json",
+    "LICENSE",
+    "README.md"
   ],
   "keywords": [
     "electron",
