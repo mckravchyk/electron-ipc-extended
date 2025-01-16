@@ -93,6 +93,11 @@ export function createRendererIpc<
     electronIpcRenderer.on(channel, (e, ...args) => callback(e, ...args));
   };
 
+  // TODO: Expose send, call and invoke as a callback wrapper that checks if the command is one of
+  // those that were defined. on and receive do not require it (unless a wrapper will actually be
+  // required to satisfy Electron runtime checks but the channel validation is not necessary for
+  // those).
+
   return {
     send: electronIpcRenderer.send,
     call: electronIpcRenderer.send,
