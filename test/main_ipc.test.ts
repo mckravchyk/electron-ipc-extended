@@ -19,6 +19,7 @@ const mocks = {
   handleOnce: jest.fn(),
   removeListener: jest.fn(),
   removeHandler: jest.fn(),
+  removeAllListeners: jest.fn(),
 };
 
 const ipcMain = {
@@ -30,6 +31,7 @@ const ipcMain = {
   handleOnce(channel: string, listener: HandleListener) { mocks.handleOnce(this, channel, listener); },
   removeListener(channel: string, listener: OnListener) { mocks.removeListener(this, channel, listener); },
   removeHandler(channel: string) { mocks.removeHandler(this, channel); },
+  removeAllListeners(channel?: string) { mocks.removeAllListeners(this, channel); },
   /* eslint-enable max-len */
 } as unknown as IpcMain;
 
@@ -40,6 +42,12 @@ const testMessage = 'testMessage';
 const testListener = () => { };
 
 describe('MainIpc', () => {
+  afterEach(() => {
+    mainIpc.removeAllListenersReceivers();
+    mainIpc.removeAllHandlers();
+    jest.clearAllMocks();
+  });
+
   it('sends an event with WebContents.send', () => {
     const webContents = { send: jest.fn() } as unknown as WebContents;
     mainIpc.send(webContents, testChannel, testMessage);
@@ -104,5 +112,31 @@ describe('MainIpc', () => {
   it('removes a command handler with ipcMain.removeHandler', () => {
     mainIpc.removeHandler(testChannel);
     expect(mocks.removeHandler).toHaveBeenCalledWith(ipcMain, testChannel);
+  });
+
+  it('removes all listeners / receivers matching channel name with ipcMain.removeAllListeners', () => {
+    mainIpc.removeAllListenersReceivers(testChannel);
+    expect(mocks.removeAllListeners).toHaveBeenCalledWith(ipcMain, testChannel);
+  });
+
+  it('removes all listeners / receivers with ipcMain.removeAllListeners', () => {
+    mainIpc.removeAllListenersReceivers();
+    expect(mocks.removeAllListeners).toHaveBeenCalledWith(ipcMain, undefined);
+  });
+
+  it('removes all command handlers registered through the instance', () => {
+    const commandNames = ['command1', 'command2', 'command3'];
+
+    commandNames.forEach((command) => {
+      mainIpc.handle(command, testListener);
+    });
+
+    mainIpc.removeAllHandlers();
+
+    expect(mocks.removeHandler).toHaveBeenCalledTimes(commandNames.length);
+
+    commandNames.forEach((command) => {
+      expect(mocks.removeHandler).toHaveBeenCalledWith(ipcMain, command);
+    });
   });
 });

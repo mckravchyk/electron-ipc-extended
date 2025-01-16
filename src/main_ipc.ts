@@ -1,6 +1,7 @@
 import type {
   IpcMain,
   IpcMainEvent,
+  IpcMainInvokeEvent,
   WebContents,
 } from 'electron';
 
@@ -139,6 +140,16 @@ export interface MainIpc<
   ) => void
 
   /**
+   * Removes all event listeners and event receivers for a channel or all if a channel is not set.
+   */
+  removeAllListenersReceivers: <
+    Calls extends RenderersActions['events'] & MpActions['calls'],
+    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
+  >(
+    channel?: Channel,
+  ) => void
+
+  /**
    * Removes a command handler.
    */
   removeHandler: <
@@ -147,12 +158,45 @@ export interface MainIpc<
   >(
     command: Command,
   ) => void
+
+  /**
+   * Removes all command handlers.
+   */
+  removeAllHandlers: () => void;
 }
 
 export function createMainIpc<
   MpActions extends IpcActions,
   RenderersActions extends IpcActions
 >(electronIpcMain: IpcMain): MainIpc<MpActions, RenderersActions> {
+  let registeredHandlers: string[] = [];
+
+  const handle = (
+    channel: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    listener: (event: IpcMainInvokeEvent, ...args: any[]) => (Promise<any>) | (any),
+  ) => {
+    registeredHandlers.push(channel);
+    electronIpcMain.handle(channel, listener);
+  };
+
+  const handleOnce = (
+    channel: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    listener: (event: IpcMainInvokeEvent, ...args: any[]) => (Promise<any>) | (any),
+  ) => {
+    registeredHandlers.push(channel);
+    electronIpcMain.handleOnce(channel, listener);
+  };
+
+  const removeAllHandlers = () => {
+    registeredHandlers.forEach((channel) => {
+      electronIpcMain.removeHandler(channel);
+    });
+
+    registeredHandlers = [];
+  };
+
   const send = (target: WebContents | FrameTarget, channel: string, ...args: unknown[]) => {
     if (typeof (target as FrameTarget).webContents === 'undefined') {
       (target as WebContents).send(channel, ...args);
@@ -173,11 +217,13 @@ export function createMainIpc<
     once: electronIpcMain.once.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['once'],
     receive: electronIpcMain.on.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['receive'],
     receiveOnce: electronIpcMain.once.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['receiveOnce'],
-    handle: electronIpcMain.handle.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['handle'],
-    handleOnce: electronIpcMain.handleOnce.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['handleOnce'],
+    handle: handle as MainIpc<MpActions, RenderersActions>['handle'],
+    handleOnce: handleOnce as MainIpc<MpActions, RenderersActions>['handleOnce'],
     removeListener: electronIpcMain.removeListener.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['removeListener'],
     removeReceiver: electronIpcMain.removeListener.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['removeReceiver'],
+    removeAllListenersReceivers: electronIpcMain.removeAllListeners.bind(electronIpcMain),
     removeHandler: electronIpcMain.removeHandler.bind(electronIpcMain),
+    removeAllHandlers,
     send,
     call: send,
   };
