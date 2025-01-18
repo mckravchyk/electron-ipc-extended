@@ -12,13 +12,32 @@ type OnListener = (event: IpcMainEvent, ...args: any[]) => void;
 type HandleListener = (event: IpcMainInvokeEvent, ...args: any[]) => (Promise<any>) | (any);
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+const registeredHandlers: string[] = [];
+
 const mocks = {
   on: jest.fn(),
   once: jest.fn(),
-  handle: jest.fn(),
-  handleOnce: jest.fn(),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  handle: jest.fn((context, channel, listener) => {
+    if (registeredHandlers.includes(channel)) {
+      throw new Error(`Attempted to register a second handler for '${channel}'`);
+    }
+    registeredHandlers.push(channel);
+  }),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  handleOnce: jest.fn((context, channel, listener) => {
+    if (registeredHandlers.includes(channel)) {
+      throw new Error(`Attempted to register a second handler for '${channel}'`);
+    }
+    registeredHandlers.push(channel);
+  }),
   removeListener: jest.fn(),
-  removeHandler: jest.fn(),
+  removeHandler: jest.fn((context, channel) => {
+    const index = registeredHandlers.indexOf(channel);
+    if (index !== -1) {
+      registeredHandlers.splice(index, 1);
+    }
+  }),
   removeAllListeners: jest.fn(),
 };
 
@@ -100,16 +119,19 @@ describe('MainIpc', () => {
   });
 
   it('removes an event listener with ipcMain.removeListener', () => {
+    mainIpc.on(testChannel, testListener);
     mainIpc.removeListener(testChannel, testListener);
     expect(mocks.removeListener).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
   it('removes a call receiver with ipcMain.removeListener', () => {
+    mainIpc.receive(testChannel, testListener);
     mainIpc.removeReceiver(testChannel, testListener);
     expect(mocks.removeListener).toHaveBeenCalledWith(ipcMain, testChannel, testListener);
   });
 
   it('removes a command handler with ipcMain.removeHandler', () => {
+    mainIpc.handle(testChannel, testListener);
     mainIpc.removeHandler(testChannel);
     expect(mocks.removeHandler).toHaveBeenCalledWith(ipcMain, testChannel);
   });
@@ -125,12 +147,21 @@ describe('MainIpc', () => {
   });
 
   it('removes all command handlers registered through the instance', () => {
-    const commandNames = ['command1', 'command2', 'command3'];
+    mainIpc.removeAllHandlers();
+    expect(mocks.removeHandler).toHaveBeenCalledTimes(0);
+
+    const commandNames = ['command1', 'command2', 'command3', 'command4'];
 
     commandNames.forEach((command) => {
       mainIpc.handle(command, testListener);
     });
 
+    // Test that the handler registry properly handles the case with duplicate handlers while
+    // allowing ipcMain to throw (it does not prevent ipcMain.handle call which throws neither does
+    // it add the handler to the registry).
+    expect(() => mainIpc.handle('command1', testListener)).toThrow();
+
+    mainIpc.removeHandler('command1');
     mainIpc.removeAllHandlers();
 
     expect(mocks.removeHandler).toHaveBeenCalledTimes(commandNames.length);

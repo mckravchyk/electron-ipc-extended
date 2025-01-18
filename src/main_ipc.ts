@@ -169,15 +169,18 @@ export function createMainIpc<
   MpActions extends IpcActions,
   RenderersActions extends IpcActions
 >(electronIpcMain: IpcMain): MainIpc<MpActions, RenderersActions> {
-  let registeredHandlers: string[] = [];
+  const registeredHandlers: string[] = [];
 
   const handle = (
     channel: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listener: (event: IpcMainInvokeEvent, ...args: any[]) => (Promise<any>) | (any),
   ) => {
-    registeredHandlers.push(channel);
     electronIpcMain.handle(channel, listener);
+
+    // ipcMain.handle will throw an error if the handler is already registered, hence push after the
+    // call so there is no duplicate entry in the array.
+    registeredHandlers.push(channel);
   };
 
   const handleOnce = (
@@ -185,16 +188,27 @@ export function createMainIpc<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listener: (event: IpcMainInvokeEvent, ...args: any[]) => (Promise<any>) | (any),
   ) => {
-    registeredHandlers.push(channel);
     electronIpcMain.handleOnce(channel, listener);
+
+    // ipcMain.handle will throw an error if the handler is already registered, hence push after the
+    // call so there is no duplicate entry in the array.
+    registeredHandlers.push(channel);
+  };
+
+  const removeHandler = (channel: string) => {
+    const index = registeredHandlers.indexOf(channel);
+
+    if (index !== -1) {
+      registeredHandlers.splice(index, 1);
+    }
+
+    electronIpcMain.removeHandler(channel);
   };
 
   const removeAllHandlers = () => {
-    registeredHandlers.forEach((channel) => {
-      electronIpcMain.removeHandler(channel);
+    [...registeredHandlers].forEach((channel) => { // forEach does not play well with .splice
+      removeHandler(channel);
     });
-
-    registeredHandlers = [];
   };
 
   const send = (target: WebContents | FrameTarget, channel: string, ...args: unknown[]) => {
@@ -222,7 +236,7 @@ export function createMainIpc<
     removeListener: electronIpcMain.removeListener.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['removeListener'],
     removeReceiver: electronIpcMain.removeListener.bind(electronIpcMain) as MainIpc<MpActions, RenderersActions>['removeReceiver'],
     removeAllListenersReceivers: electronIpcMain.removeAllListeners.bind(electronIpcMain),
-    removeHandler: electronIpcMain.removeHandler.bind(electronIpcMain),
+    removeHandler,
     removeAllHandlers,
     send,
     call: send,
