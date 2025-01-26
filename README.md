@@ -1,6 +1,6 @@
 # electron-ipc-extended
   
-electron-ipc-extended is a typed-ipc wrapper for Electron (it's possible that more functionality will be added in the future, hence the name).
+electron-ipc-extended adds type-safety and awaitable renderer commands to Electron IPC.
 
 ## Installation
 
@@ -16,7 +16,7 @@ Initialize the IPC wrappers by passing Electron's IPC module and generic type ar
 ```ts
 
 import { ipcMain } from 'electron';
-import { createMainIpc } from 'electron-ipc-extended';
+import { MainIpc } from 'electron-ipc-extended';
 import type { RendererIpcActions } from './renderer';
 
 export interface MainIpcActions {
@@ -36,13 +36,13 @@ export interface MainIpcActions {
   // if there are no actions of this type.
 }
 
-const ipc = createMainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
+const ipc = new MainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
 ```
 
 *renderer.ts*
 ```ts
 import { ipcRenderer } from 'electron';
-import { createRendererIpc } from 'electron-ipc-extended';
+import { RendererIpc } from 'electron-ipc-extended';
 import type { MainIpcActions } from './main';
 
 export interface RendererIpcActions {
@@ -50,13 +50,15 @@ export interface RendererIpcActions {
     // ...
   }
 
-  calls: {
+  commands: {
     // ...
   }
 
-  // Note that currently commands are not supported in the renderer
+  calls: {
+    // ...
+  }
 }
-const ipc = createRendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
+const ipc = new RendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
 ```
 
 ## Actions
@@ -74,7 +76,7 @@ An event is a plain IPC message that is dispatched from one source to many targe
 *main.ts*
 ```ts
 import { BrowserWindow, ipcMain } from 'electron';
-import { createMainIpc } from 'electron-ipc-extended';
+import { MainIpc } from 'electron-ipc-extended';
 import type { RendererIpcActions } from './renderer';
 
 export interface MainIpcActions {
@@ -83,7 +85,7 @@ export interface MainIpcActions {
   }
 }
 
-const ipc = createMainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
+const ipc = new MainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
 const win = new BrowserWindow();
 
 win.on('resize', () => {
@@ -96,12 +98,12 @@ win.on('resize', () => {
 *renderer.ts*
 ```ts
 import { ipcRenderer } from 'electron';
-import { createRendererIpc } from 'electron-ipc-extended';
+import { RendererIpc } from 'electron-ipc-extended';
 import type { MainIpcActions } from './main';
 
 export interface RendererIpcActions { }
 
-const ipc = createRendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
+const ipc = new RendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
 
 ipc.on('window/resize', (e, width, height) => {
   console.log(`Window resized: ${width} x ${height}`);
@@ -117,7 +119,7 @@ A command is handled in the target and can be invoked from multiple sources. Com
 *main.ts*
 ```ts
 import { BrowserWindow, ipcMain } from 'electron';
-import { createMainIpc } from 'electron-ipc-extended';
+import { MainIpc } from 'electron-ipc-extended';
 import type { RendererIpcActions } from './renderer';
 
 export interface MainIpcActions {
@@ -126,7 +128,7 @@ export interface MainIpcActions {
   }
 }
 
-const ipc = createMainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
+const ipc = new MainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
 const win = new BrowserWindow();
 
 ipc.handle('window/isAlwaysOnTop', win.isAlwaysOnTop);
@@ -136,12 +138,12 @@ ipc.handle('window/isAlwaysOnTop', win.isAlwaysOnTop);
 *renderer.ts*
 ```ts
 import { ipcRenderer } from 'electron';
-import { createRendererIpc } from 'electron-ipc-extended';
+import { RendererIpc } from 'electron-ipc-extended';
 import type { MainIpcActions } from './main';
 
 export interface RendererIpcActions { }
 
-const ipc = createRendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
+const ipc = new RendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
 
 function isWindowAlwaysOnTop(): Promise<boolean> {
   return ipc.invoke('window/isAlwaysOnTop');
@@ -149,8 +151,7 @@ function isWindowAlwaysOnTop(): Promise<boolean> {
 
 ```
 
-Note: Currently only the main process can receive commands (only the renderer can invoke them) - you can use calls instead (they are not awaitable though).
-
+Unlike with plain Electron IPC, commands can be handled in a renderer.
 
 ### Calls
 
@@ -161,14 +162,14 @@ From the runtime perspective, they are identical to events. Call handling functi
 *main.ts*
 ```ts
 import { BrowserWindow, ipcMain } from 'electron';
-import { createMainIpc } from 'electron-ipc-extended';
+import { MainIpc } from 'electron-ipc-extended';
 import type { RendererIpcActions } from './renderer';
 
 export interface MainIpcActions { }
 
 const win = new BrowserWindow();
 
-const ipc = createMainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
+const ipc = new MainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
 
 ipc.call(win.webContents, 'menus/open', 'main-menu');
 
@@ -177,7 +178,7 @@ ipc.call(win.webContents, 'menus/open', 'main-menu');
 *renderer.ts*
 ```ts
 import { ipcRenderer } from 'electron';
-import { createRendererIpc } from 'electron-ipc-extended';
+import { RendererIpc } from 'electron-ipc-extended';
 import type { MainIpcActions } from './main';
 
 export interface RendererIpcActions {
@@ -186,7 +187,7 @@ export interface RendererIpcActions {
   }
 }
 
-const ipc = createRendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
+const ipc = new RendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
 
 ipc.receive('menus/open', (e, menuId) => {
   console.log(`Opening menu ${menuId}`);
@@ -201,18 +202,13 @@ You will likely want to define actions for each module but the library accepts o
 
 ```ts
 export type MainIpcActions = ModuleAIpcActions & ModuleBIpcActions;
-const ipc = createMainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
+const ipc = new MainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
 ```
 
 Since there's a single IPC interface for all app modules, it is recommended to prefix action names with the name of the module, i.e. `menus/open` rather than `openMenu`
 
 [View Full Example](examples/multiple_modules)
 
-## Possible future upgrades
+## Child IPC
 
-No promises made, these are the possible future features in the order of priority:
-
-- Typed communication between main process and a Node.js child process
-- (typed) Communication between a Node.js child process and a renderer (indirect via main)
-- Invokeable commands for all channels
-- Passing uncaught errors thrown in command handlers to the other side, with custom error object re-hydration
+See [child-ipc](https://github.com/mckravchyk/child-ipc) - a sister library that adds a similar typed API with events, calls and commands that supports 2-way communication with a Node.js child process.

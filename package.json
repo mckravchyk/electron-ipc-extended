@@ -1,7 +1,7 @@
 {
   "name": "electron-ipc-extended",
   "version": "1.1.2",
-  "description": "Provides cross-process type safety and clear event organization for Electron apps",
+  "description": "Adds type-safety and awaitable renderer commands to Electron IPC",
   "author": "Maciej Krawczyk",
   "homepage": "https://github.com/mckravchyk/electron-ipc-extended",
   "license": "MIT",
@@ -57,11 +57,14 @@
     "eslint-config-mckravchyk": "^1.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jest": "^27.2.3",
-    "jest": "^29.6.1",
+    "jest": "^30.0.0-alpha.6",
     "rollup": "^4.9.1",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "tslib": "^2.4.0",
     "typescript": "5.3"
+  },
+  "dependencies": {
+    "external-promise": "^1.1.0"
   }
 }

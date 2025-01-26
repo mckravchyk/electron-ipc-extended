@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 
-import { createMainIpc, type MainIpc } from 'electron-ipc-extended';
+import { MainIpc } from 'electron-ipc-extended';
 
 import type { RendererIpcActions } from '../renderer';
 
@@ -17,7 +17,7 @@ export class App {
   public moduleB: ModuleB;
 
   public constructor() {
-    this.ipc = createMainIpc(ipcMain);
+    this.ipc = new MainIpc(ipcMain);
     this.moduleA = new ModuleA(this);
     this.moduleB = new ModuleB(this);
   }

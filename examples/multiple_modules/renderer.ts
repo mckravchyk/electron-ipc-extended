@@ -1,5 +1,5 @@
 import { ipcRenderer } from 'electron';
-import { createRendererIpc, type RendererIpc } from 'electron-ipc-extended';
+import { RendererIpc } from 'electron-ipc-extended';
 
 import type { MainIpcActions } from './main';
 
@@ -11,7 +11,7 @@ export class RendererApp {
   public ipc: RendererIpc<RendererIpcActions, MainIpcActions>;
 
   public constructor() {
-    this.ipc = createRendererIpc(ipcRenderer);
+    this.ipc = new RendererIpc(ipcRenderer);
     this.ipc.call('moduleA/hello', 'world');
 
     void this.ipc.invoke('moduleB/countMe').then((callCount) => {

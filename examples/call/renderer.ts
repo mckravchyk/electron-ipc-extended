@@ -1,5 +1,5 @@
 import { ipcRenderer } from 'electron';
-import { createRendererIpc } from 'electron-ipc-extended';
+import { RendererIpc } from 'electron-ipc-extended';
 import type { MainIpcActions } from './main';
 
 export interface RendererIpcActions {
@@ -8,7 +8,7 @@ export interface RendererIpcActions {
   }
 }
 
-const ipc = createRendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
+const ipc = new RendererIpc<RendererIpcActions, MainIpcActions>(ipcRenderer);
 
 ipc.receive('menus/open', (e, menuId) => {
   console.log(`Opening menu ${menuId}`);

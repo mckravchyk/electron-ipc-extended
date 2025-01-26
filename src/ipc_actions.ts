@@ -23,31 +23,35 @@ export type IpcInvokeActionDomain = Record<string, IpcInvokeAction>;
 
 export interface IpcActions {
   /**
-   * An event is a plain IPC message that is dispatched from one source to many targets. Events
-   * are defined by the module that emits them. Events are sent with the `send` method and listened
-   * to with the `on` method.
+   * An event is a plain IPC message that is dispatched from one source to one or more targets.
+   * Events are defined by the module that emits them. Events are sent with the `send` method
+   * and listened to with the `on` method.
    */
   events?: IpcActionDomain
 
   /**
-   * A call is a plain IPC message that is received in the target and can be called from many
-   * sources. Calls are defined by the module that handles them. Calls are called with the
-   * `call` method and received with the `receive` method.
-   *
-   * From the runtime perspective, they are identical to events. Call handling functions are just
-   * aliases for event handling functions. However, from type and definitions perspective, calls
-   * are used in the same way as commands.
-   *
-   * Calls have been introduced because ipcMain cannot invoke to renderers and not all command-type
-   * IPC actions should be awaitable. Using awaitable commands when they are not needed is a
-   * potential unncessary runtime overhead.
-   */
-  calls?: IpcActionDomain
-
-  /**
-   * A command is handled in the target and can be invoked from multiple sources. Commands are
-   * defined by the module that handles them. Commands are invoked with the `invoke` method and
-   * handled with the `handle` method.
+   * A command is an IPC request that returns a result. They are defined by the side that handles
+   * them and can be invoked from multiple sources. Commands are invoked with the `invoke` method
+   * and handled with the `handle` method. A command can have only one handler. If a handler is not
+   * registered, invoke() will throw an error after `Options.responseTimeout`.
    */
   commands?: IpcInvokeActionDomain
+
+  /**
+   * A call is a plain IPC message that is received in the target and can be called from many
+   * sources. They are similar to commands and are defined by the receiving side, with the
+   * difference being that they do not expect any data (including any guarantee that it has been
+   * picked up on the other side). Calls are effectively the opposite of an event. Calls are called
+   * with the `call` method and received with the `receive` method.
+   */
+  calls?: IpcActionDomain
+}
+
+export interface UntypedIpcActions {
+  // any is better than unknown for callback parameters in untyped mode
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  events: Record<string, any[]>
+  calls: Record<string, any[]>
+  commands: Record<string, { params: any[], returnVal: unknown }>
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 }

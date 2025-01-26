@@ -1,48 +1,75 @@
+/* eslint-disable class-methods-use-this, space-before-function-paren, function-paren-newline */
+
 import type { IpcRenderer, IpcRendererEvent } from 'electron';
 import type {
   IpcActionDomain,
   IpcActions,
   IpcInvokeAction,
   IpcInvokeActionDomain,
+  UntypedIpcActions,
 } from './ipc_actions';
 
+import { Ipc, type Envelope, type MessageId } from './ipc';
+
+export interface RendererIpcEvent extends IpcRendererEvent {
+  messageId: MessageId;
+}
+
 /**
- * A typed IPC interface to communicate with the main process in renderers, ready to be used over
- * the context bridge (with renderers running trusted, local content only).
+ * An extended IPC wrapper for `IpcRenderer` that adds type-safety, support for handling commands
+ * in the renderer and some other enhancements.
  *
- * Its use over the context bridge is meant only for renderers running local content. It should
- * absolutely not be used over the context bridge with remote content (in such case the send method
+ * NOTE: Its use over the context bridge is meant only for renderers running local content. It
+ * should not be used over the context bridge with remote content (in such case the send method
  * should filter allowed commands and the on method should not expose event.sender).
  */
-export interface RendererIpc<RendererActions extends IpcActions, MpActions extends IpcActions> {
+export class RendererIpc<
+  RendererActions extends IpcActions = UntypedIpcActions,
+  MpActions extends IpcActions = UntypedIpcActions
+> extends Ipc<RendererIpcEvent, RendererActions, MpActions> {
+  protected respond_(electronEvent: IpcRendererEvent, envelope: Envelope): void {
+    (this.ipc_ as IpcRenderer).send(Ipc.RESPONSES_CHANNEL, envelope);
+  }
+
+  protected createEvent_(originEvent: IpcRendererEvent, envelope: Envelope): RendererIpcEvent {
+    return {
+      ...originEvent,
+      messageId: envelope.messageId,
+    };
+  }
+
   /**
    * Dispatches an event.
    */
-  send: <
-   Events extends RendererActions['events'],
-   Channel extends (Events extends IpcActionDomain ? keyof Events : never),
-   Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+  public send<
+    Events extends RendererActions['events'],
+    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
   >(
     channel: Channel,
     ...args: Args
-  ) => void
+  ): void {
+    this.send_(Ipc.EVENTS_CHANNEL, channel as string, args);
+  }
 
   /**
    * Makes a call.
    */
-  call: <
+  public call<
     Calls extends MpActions['calls'],
     Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
     Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
   >(
     channel: Channel,
     ...args: Args
-  ) => void
+  ): void {
+    this.send_(Ipc.CALLS_CHANNEL, channel as string, args);
+  }
 
   /**
    * Invokes a command.
    */
-  invoke: <
+  public invoke<
     Commands extends MpActions['commands'],
     Command extends (Commands extends IpcInvokeActionDomain ? keyof Commands : never),
     Args extends(Commands[Command] extends IpcInvokeAction ? Commands[Command]['params'] : unknown[]),
@@ -50,59 +77,24 @@ export interface RendererIpc<RendererActions extends IpcActions, MpActions exten
   >(
     command: Command,
     ...args: Args
-  ) => ReturnVal extends Promise<unknown> ? ReturnVal : Promise<ReturnVal>
+  ): ReturnVal extends Promise<unknown> ? ReturnVal : Promise<ReturnVal> {
+    return this.invoke_(
+      command as string,
+      (messageId) => {
+        this.send_(Ipc.COMMANDS_CHANNEL, command as string, args, messageId);
+      },
+      -1,
+    ) as ReturnVal extends Promise<unknown> ? ReturnVal : Promise<ReturnVal>;
+  }
 
-  /**
-   * Listens for an event.
-   */
-  on: <
-    Events extends MpActions['events'],
-    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
-    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
-  >(
-    channel: Channel,
-    listener: (event: IpcRendererEvent, ...args: Args) => void
-  ) => void
-
-  /**
-   * Receives a call.
-   */
-  receive: <
-    Calls extends RendererActions['calls'],
-    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
-    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
-  >(
-    channel: Channel,
-    receiver: (event: IpcRendererEvent, ...args: Args) => void
-  ) => void
-
-  // TODO: Implement removeListener and removeReceiver. This cannot be acomplished by just exposing
-  // the function as it's not going to work over the context bridge, the wrapper must keep track of
-  // listener IDs which can be passed over the bridge. The priority for this is low as usually
-  // there's no need to unbind the listeners which are usually initialized on init and are destroyed
-  // together with the renderer process.
-}
-
-export function createRendererIpc<
-  RendererActions extends IpcActions,
-  MpActions extends IpcActions,
->(electronIpcRenderer: IpcRenderer): RendererIpc<RendererActions, MpActions> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, max-len
-  const on = (channel: string, callback: (e: IpcRendererEvent, ...args: any[]) => void): void => {
-    // This is required to make it work with contextBridge.
-    electronIpcRenderer.on(channel, (e, ...args) => callback(e, ...args));
-  };
-
-  // TODO: Expose send, call and invoke as a callback wrapper that checks if the command is one of
-  // those that were defined. on and receive do not require it (unless a wrapper will actually be
-  // required to satisfy Electron runtime checks but the channel validation is not necessary for
-  // those).
-
-  return {
-    send: electronIpcRenderer.send,
-    call: electronIpcRenderer.send,
-    invoke: electronIpcRenderer.invoke as RendererIpc<RendererActions, MpActions>['invoke'],
-    on: on as RendererIpc<RendererActions, MpActions>['on'],
-    receive: on as RendererIpc<RendererActions, MpActions>['receive'],
-  };
+  // eslint-disable-next-line max-len, class-methods-use-this
+  private send_(
+    electronChannel: string,
+    channel: string,
+    args: unknown[],
+    messageId?: MessageId,
+  ): void {
+    const envelope = Ipc.wrap_(args, channel, messageId || undefined);
+    (this.ipc_ as IpcRenderer).send(electronChannel as string, envelope);
+  }
 }
