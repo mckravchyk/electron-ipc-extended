@@ -30,7 +30,7 @@ export class IpcMainMock {
     listeners.push(cb);
   }
 
-  public removeListener(event: string, cb: IpcEventListener<IpcMainEvent>) {
+  public off(event: string, cb: IpcEventListener<IpcMainEvent>) {
     let i = 0;
 
     const listeners = this.callbacks.get(event) || [];
@@ -81,6 +81,12 @@ export class IpcRendererMock {
     this.ipcMain.emit(channel, ...args);
   }
 
+  // This is required to test if bridge pass has been used.
+  // eslint-disable-next-line class-methods-use-this
+  public sendSync() {
+    throw new Error('noop');
+  }
+
   public on(channel: string, cb: IpcEventListener<IpcRendererEvent>) {
     const listeners = this.callbacks.get(channel) || [];
 
@@ -91,7 +97,7 @@ export class IpcRendererMock {
     listeners.push(cb);
   }
 
-  public removeListener(channel: string, cb: IpcEventListener<IpcRendererEvent>) {
+  public off(channel: string, cb: IpcEventListener<IpcRendererEvent>) {
     let i = 0;
 
     const listeners = this.callbacks.get(channel) || [];

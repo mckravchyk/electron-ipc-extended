@@ -19,7 +19,7 @@ describe('Electron IPC mock', () => {
     webContents.send('test-channel', 'test-message');
 
     expect(ipcRendererReceived).toBe(true);
-    ipcRenderer.removeListener('test-channel', ipcRendererCallback);
+    ipcRenderer.off('test-channel', ipcRendererCallback);
   });
 
   test('Message sent from the renderer is received in the main process and replied to', () => {
@@ -54,8 +54,8 @@ describe('Electron IPC mock', () => {
     expect(senderId).toBe(webContents.id);
     expect(responseReceived).toBe(true);
 
-    ipcMain.removeListener('test-channel', ipcMainCallback);
-    ipcRenderer.removeListener('reply-channel', ipcRendererReplyCallback);
+    ipcMain.off('test-channel', ipcMainCallback);
+    ipcRenderer.off('reply-channel', ipcRendererReplyCallback);
   });
 
   test('A listener in IpcMain is removed', () => {
@@ -67,7 +67,7 @@ describe('Electron IPC mock', () => {
 
     ipcMain.on('test-channel', callback);
     ipcRenderer.send('test-channel', 'test-message');
-    ipcMain.removeListener('test-channel', callback);
+    ipcMain.off('test-channel', callback);
     ipcRenderer.send('test-channel', 'test-message');
 
     expect(callback).toHaveBeenCalledTimes(1);
@@ -82,7 +82,7 @@ describe('Electron IPC mock', () => {
 
     ipcRenderer.on('test-channel', callback);
     webContents.send('test-channel', 'test-message');
-    ipcRenderer.removeListener('test-channel', callback);
+    ipcRenderer.off('test-channel', callback);
     webContents.send('test-channel', 'test-message');
 
     expect(callback).toHaveBeenCalledTimes(1);

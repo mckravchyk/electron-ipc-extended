@@ -1,9 +1,4 @@
-import type {
-  IpcMain,
-  IpcMainEvent,
-  IpcRenderer,
-  IpcRendererEvent,
-} from 'electron';
+import type { IpcMainEvent, IpcRendererEvent } from 'electron';
 
 import { ExternalPromise } from 'external-promise';
 
@@ -16,6 +11,8 @@ import type {
 } from './ipc_actions';
 
 import { generateId } from './lib/string';
+
+import type { MainIpcEvent } from './main_ipc';
 
 /* eslint-disable class-methods-use-this, space-before-function-paren, function-paren-newline */
 
@@ -61,6 +58,16 @@ interface ListenerEntry<Event> {
 
 export const DEFAULT_RESPONSE_TIMEOUT = 10000;
 
+/**
+ * Minimal Electron IPC dependency (IpcMain/IpcRenderer).
+ */
+export interface NativeIpcDep<Event> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on: (channel: string, listener: (event: Event, ...args: any[]) => void) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  off: (channel: string, listener: (event: Event, ...args: any[]) => void) => void
+}
+
 export interface Options {
   /**
    * Maximum time (ms) allowed to receive, process and return back the response of a command. If
@@ -82,7 +89,7 @@ export abstract class Ipc<
 
   public static readonly RESPONSES_CHANNEL = 'eipce-response';
 
-  protected ipc_: IpcMain | IpcRenderer;
+  protected ipc_: NativeIpcDep<Event extends MainIpcEvent ? IpcMainEvent : IpcRendererEvent>;
 
   private listeners_: Map<string, ListenerEntry<Event>[]> = new Map();
 
@@ -102,7 +109,10 @@ export abstract class Ipc<
 
   private responseTimeout_: number;
 
-  public constructor(ipc: IpcMain | IpcRenderer, options: Options = { }) {
+  public constructor(
+    ipc: NativeIpcDep<Event extends MainIpcEvent ? IpcMainEvent : IpcRendererEvent>,
+    options: Options = { },
+  ) {
     this.ipc_ = ipc;
 
     this.responseTimeout_ = typeof options.responseTimeout === 'number' && options.responseTimeout > 0
@@ -127,10 +137,10 @@ export abstract class Ipc<
     this.removeAllListeners();
     this.removeAllReceivers();
     this.removeAllHandlers();
-    this.ipc_.removeListener(Ipc.EVENTS_CHANNEL, this.handleEventMessage_);
-    this.ipc_.removeListener(Ipc.CALLS_CHANNEL, this.handleCallMessage_);
-    this.ipc_.removeListener(Ipc.COMMANDS_CHANNEL, this.handleCommandMessage_);
-    this.ipc_.removeListener(Ipc.RESPONSES_CHANNEL, this.handleResponseMessage_);
+    this.ipc_.off(Ipc.EVENTS_CHANNEL, this.handleEventMessage_);
+    this.ipc_.off(Ipc.CALLS_CHANNEL, this.handleCallMessage_);
+    this.ipc_.off(Ipc.COMMANDS_CHANNEL, this.handleCommandMessage_);
+    this.ipc_.off(Ipc.RESPONSES_CHANNEL, this.handleResponseMessage_);
 
     // @ts-expect-error null
     this.ipc_ = null;

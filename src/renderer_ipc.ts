@@ -1,6 +1,7 @@
 /* eslint-disable class-methods-use-this, space-before-function-paren, function-paren-newline */
 
 import type { IpcRenderer, IpcRendererEvent } from 'electron';
+
 import type {
   IpcActionDomain,
   IpcActions,
@@ -9,10 +10,53 @@ import type {
   UntypedIpcActions,
 } from './ipc_actions';
 
-import { Ipc, type Envelope, type MessageId } from './ipc';
+import {
+  Ipc,
+  type Envelope,
+  type MessageId,
+  type NativeIpcDep,
+  type Options,
+} from './ipc';
 
 export interface RendererIpcEvent extends IpcRendererEvent {
   messageId: MessageId;
+}
+
+/**
+ * Minimal IpcRenderer dependency.
+ */
+export interface IpcRendererDep extends NativeIpcDep<IpcRendererEvent> {
+  send: (channel: string, ...args: unknown[]) => void
+}
+
+/**
+ * Creates a minimal IpcRenderer dependency that can be passed via Context Bridge.
+ *
+ * This allows to initialize RendererIpc in the main context of the renderer process, even when
+ * nodeIntegration is disabled and contextIsolation is enabled. RendererIpc must be initialized
+ * in the main context so that event listeners are removed.
+ *
+ * The usage is as follows:
+ *
+ * preload.js:
+ *   contextBridge.exposeInMainWorld('ipcRenderer', createIpcRendererBridgePass(ipcRenderer));
+ *
+ * renderer.js:
+ *   const rendererIpc = new RendererIpc(window.ipcRenderer);
+ *
+ * NOTE: An instance created this way cannot be fully destroyed. Error will be thrown. This is
+ * because it can't remove its own listeners to Electron IPC over the bridge.
+ *
+ * NOTE: This is meant only for renderers that are running local, trusted content. Remote renderers
+ * should have the instance fully initialized in the preload script, with the API exposed over well
+ * defined functions and masking of event.sender / event.reply.
+ */
+export function createIpcRendererBridgePass(ipc: IpcRenderer): IpcRendererDep {
+  return {
+    send: ipc.send.bind(ipc),
+    on: ipc.on.bind(ipc),
+    off: ipc.off.bind(ipc),
+  };
 }
 
 /**
@@ -27,8 +71,26 @@ export class RendererIpc<
   RendererActions extends IpcActions = UntypedIpcActions,
   MpActions extends IpcActions = UntypedIpcActions
 > extends Ipc<RendererIpcEvent, RendererActions, MpActions> {
+  public constructor(
+    ipc: IpcRendererDep,
+    options: Options = { },
+  ) {
+    super(ipc, options);
+  }
+
+  public destroy(): void {
+    // NOTE: ipc_ will be null if already destroyed and then we don't want the type error
+    // (destroying again does not throw).
+    const isBridgePass = this.ipc_ !== null && typeof (this.ipc_ as IpcRenderer).sendSync !== 'function';
+    super.destroy();
+
+    if (isBridgePass) {
+      throw new Error('RendererIpc cannot be destroyed fully when initialized with createIpcRendererBridgePass()');
+    }
+  }
+
   protected respond_(electronEvent: IpcRendererEvent, envelope: Envelope): void {
-    (this.ipc_ as IpcRenderer).send(Ipc.RESPONSES_CHANNEL, envelope);
+    (this.ipc_ as IpcRendererDep).send(Ipc.RESPONSES_CHANNEL, envelope);
   }
 
   protected createEvent_(originEvent: IpcRendererEvent, envelope: Envelope): RendererIpcEvent {
@@ -95,6 +157,6 @@ export class RendererIpc<
     messageId?: MessageId,
   ): void {
     const envelope = Ipc.wrap_(args, channel, messageId || undefined);
-    (this.ipc_ as IpcRenderer).send(electronChannel as string, envelope);
+    (this.ipc_ as IpcRendererDep).send(electronChannel as string, envelope);
   }
 }

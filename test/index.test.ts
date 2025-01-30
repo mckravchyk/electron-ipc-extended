@@ -1,5 +1,7 @@
 import type { IpcMain, IpcRenderer, WebContents } from 'electron';
 
+import { createIpcRendererBridgePass } from 'src/renderer_ipc';
+
 import {
   DEFAULT_RESPONSE_TIMEOUT,
   MainIpc,
@@ -419,6 +421,122 @@ describe('electron-ipc-extended', () => {
       mainIpc.destroy();
     });
 
+    test('The renderer handles a command (ipcRenderer bridge pass)', async () => {
+      const ipcMain = new IpcMainMock() as unknown as IpcMain;
+      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
+      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
+      const webContents = webContentsMock as unknown as WebContents;
+      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
+      // eslint-disable-next-line max-len
+      const ipcRendererBridgePass = createIpcRendererBridgePass(ipcRenderer as unknown as IpcRenderer);
+
+      // eslint-disable-next-line max-len
+      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRendererBridgePass);
+      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
+
+      let thisVal: RendererIpc<RendererActions, MpActions> | null = null;
+      let event: RendererIpcEvent | null = null;
+      let aVal = 0;
+      let bVal = 0;
+
+      rendererIpc.handle('renderer/cm', async function (e) {
+        event = e;
+        thisVal = this;
+      });
+
+      rendererIpc.handle('renderer/cm1', (e, a, b) => {
+        aVal += a;
+        bVal += b.test;
+        return 1;
+      });
+
+      rendererIpc.handle('renderer/cm2', async (e, a, b) => {
+        aVal += a;
+        bVal += b.test;
+        return 10;
+      });
+
+      const rVals = await Promise.all([
+        mainIpc.invoke(webContents, 'renderer/cm'),
+        mainIpc.invoke(webContents, 'renderer/cm1', 1, { test: 1 }),
+        mainIpc.invoke(webContents, 'renderer/cm2', 10, { test: 10 }),
+        mainIpc.invoke(webContents, 'renderer/cm1', 1, { test: 1 }),
+        mainIpc.invoke(webContents, 'renderer/cm2', 10, { test: 10 }),
+      ]);
+
+      expect(thisVal).toBe(rendererIpc);
+      expect(event).not.toBe(null);
+      expect(typeof event!.messageId).toBe('string');
+      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+
+      expect(aVal).toBe(22);
+      expect(bVal).toBe(22);
+      expect(rVals.sort()).toEqual([1, 1, 10, 10, undefined]);
+
+      // TODO: When implementing the general cleanup, just use try catch for every teardown.
+      // Another test validates that an error is thrown.
+      expect(() => rendererIpc.destroy()).toThrow();
+      mainIpc.destroy();
+    });
+
+    test('The main process handles a command (ipcRenderer bridge pass)', async () => {
+      const ipcMain = new IpcMainMock() as unknown as IpcMain;
+      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
+      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
+      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
+      // eslint-disable-next-line max-len
+      const ipcRendererBridgePass = createIpcRendererBridgePass(ipcRenderer as unknown as IpcRenderer);
+
+      // eslint-disable-next-line max-len
+      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRendererBridgePass);
+      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
+
+      let thisVal: MainIpc<MpActions, RendererActions> | null = null;
+      let event: MainIpcEvent | null = null;
+      let aVal = 0;
+      let bVal = 0;
+      let senderId = 0;
+
+      mainIpc.handle('mp/cm', async function (e) {
+        event = e;
+        thisVal = this;
+        senderId = e.sender.id;
+      });
+
+      mainIpc.handle('mp/cm1', (e, a, b) => {
+        aVal += a;
+        bVal += b.test;
+        return 1;
+      });
+
+      mainIpc.handle('mp/cm2', async (e, a, b) => {
+        aVal += a;
+        bVal += b.test;
+        return 10;
+      });
+
+      const rVals = await Promise.all([
+        rendererIpc.invoke('mp/cm'),
+        rendererIpc.invoke('mp/cm1', 1, { test: 1 }),
+        rendererIpc.invoke('mp/cm2', 10, { test: 10 }),
+        rendererIpc.invoke('mp/cm1', 1, { test: 1 }),
+        rendererIpc.invoke('mp/cm2', 10, { test: 10 }),
+      ]);
+
+      expect(senderId).toBe(webContentsMock.id);
+      expect(thisVal).toBe(mainIpc);
+      expect(event).not.toBe(null);
+      expect(typeof event!.messageId).toBe('string');
+      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+
+      expect(aVal).toBe(22);
+      expect(bVal).toBe(22);
+      expect(rVals.sort()).toEqual([1, 1, 10, 10, undefined]);
+
+      expect(() => rendererIpc.destroy()).toThrow();
+      mainIpc.destroy();
+    });
+
     test('Event listeners are executed in the order they were added', () => {
       const ipcMain = new IpcMainMock() as unknown as IpcMain;
       const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
@@ -749,6 +867,20 @@ describe('electron-ipc-extended', () => {
 
       rendererIpc.destroy();
       mainIpc.destroy();
+    });
+
+    test('An error is thrown when RendererIpc created with bridge pass is destroyed', () => {
+      const ipcMain = new IpcMainMock() as unknown as IpcMain;
+      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
+      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
+      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
+      // eslint-disable-next-line max-len
+      const ipcRendererBridgePass = createIpcRendererBridgePass(ipcRenderer as unknown as IpcRenderer);
+
+      // eslint-disable-next-line max-len
+      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRendererBridgePass);
+
+      expect(() => rendererIpc.destroy()).toThrow();
     });
   });
 
