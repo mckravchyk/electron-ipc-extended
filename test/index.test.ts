@@ -66,21 +66,37 @@ type MpActions = {
 
 jest.useFakeTimers();
 
+let ipcMain: IpcMain;
+let ipcRenderer: IpcRendererMock;
+let webContents: WebContents;
+let webContentsMock: WebContentsMock;
+
+let rendererIpc: RendererIpc<RendererActions, MpActions>;
+let mainIpc: MainIpc<MpActions, RendererActions>;
+
 describe('electron-ipc-extended', () => {
+  beforeEach(() => {
+    ipcMain = new IpcMainMock() as unknown as IpcMain;
+    ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
+    webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
+    webContents = webContentsMock as unknown as WebContents;
+    (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
+
+    // eslint-disable-next-line max-len
+    rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
+    mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
+  });
+
+  afterEach(() => {
+    rendererIpc.destroy();
+    mainIpc.destroy();
+  });
+
   describe('Emitting and listening', () => {
     // Each basic test includes 2 events being emitted 2 times each and listened 2 times each, with
     // the latter being an exception for commands where only one command handler is allowed.
 
     test('The renderer emits an event (the main process listens)', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContents = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContents);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let thisVal: MainIpc<MpActions, RendererActions> | null = null;
       let event: MainIpcEvent | null = null;
       let aVal = 0;
@@ -127,22 +143,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(44);
       expect(bVal).toBe(44);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('The renderer receives a call (the main process makes a call)', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      const webContents = webContentsMock as unknown as WebContents;
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let thisVal: RendererIpc<RendererActions, MpActions> | null = null;
       let event: RendererIpcEvent | null = null;
       let aVal = 0;
@@ -186,22 +189,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(44);
       expect(bVal).toBe(44);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('The renderer handles a command (the main process invokes)', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      const webContents = webContentsMock as unknown as WebContents;
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let thisVal: RendererIpc<RendererActions, MpActions> | null = null;
       let event: RendererIpcEvent | null = null;
       let aVal = 0;
@@ -240,22 +230,9 @@ describe('electron-ipc-extended', () => {
       expect(aVal).toBe(22);
       expect(bVal).toBe(22);
       expect(rVals.sort()).toEqual([1, 1, 10, 10, undefined]);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('The main process emits an event (the renderer listens)', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      const webContents = webContentsMock as unknown as WebContents;
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let thisVal: RendererIpc<RendererActions, MpActions> | null = null;
       let event: RendererIpcEvent | null = null;
       let aVal = 0;
@@ -299,21 +276,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(44);
       expect(bVal).toBe(44);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('The main process receives a call (the renderer makes a call)', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let thisVal: MainIpc<MpActions, RendererActions> | null = null;
       let event: MainIpcEvent | null = null;
       let aVal = 0;
@@ -360,21 +325,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(44);
       expect(bVal).toBe(44);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('The main process handles a command (the renderer invokes)', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let thisVal: MainIpc<MpActions, RendererActions> | null = null;
       let event: MainIpcEvent | null = null;
       let aVal = 0;
@@ -416,41 +369,32 @@ describe('electron-ipc-extended', () => {
       expect(aVal).toBe(22);
       expect(bVal).toBe(22);
       expect(rVals.sort()).toEqual([1, 1, 10, 10, undefined]);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('The renderer handles a command (ipcRenderer bridge pass)', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      const webContents = webContentsMock as unknown as WebContents;
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
       // eslint-disable-next-line max-len
       const ipcRendererBridgePass = createIpcRendererBridgePass(ipcRenderer as unknown as IpcRenderer);
 
       // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRendererBridgePass);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
+      const rendererIpcBp = new RendererIpc<RendererActions, MpActions>(ipcRendererBridgePass);
 
       let thisVal: RendererIpc<RendererActions, MpActions> | null = null;
       let event: RendererIpcEvent | null = null;
       let aVal = 0;
       let bVal = 0;
 
-      rendererIpc.handle('renderer/cm', async function (e) {
+      rendererIpcBp.handle('renderer/cm', async function (e) {
         event = e;
         thisVal = this;
       });
 
-      rendererIpc.handle('renderer/cm1', (e, a, b) => {
+      rendererIpcBp.handle('renderer/cm1', (e, a, b) => {
         aVal += a;
         bVal += b.test;
         return 1;
       });
 
-      rendererIpc.handle('renderer/cm2', async (e, a, b) => {
+      rendererIpcBp.handle('renderer/cm2', async (e, a, b) => {
         aVal += a;
         bVal += b.test;
         return 10;
@@ -464,7 +408,7 @@ describe('electron-ipc-extended', () => {
         mainIpc.invoke(webContents, 'renderer/cm2', 10, { test: 10 }),
       ]);
 
-      expect(thisVal).toBe(rendererIpc);
+      expect(thisVal).toBe(rendererIpcBp);
       expect(event).not.toBe(null);
       expect(typeof event!.messageId).toBe('string');
       expect(event!.messageId.startsWith('eipce_')).toBe(true);
@@ -473,23 +417,15 @@ describe('electron-ipc-extended', () => {
       expect(bVal).toBe(22);
       expect(rVals.sort()).toEqual([1, 1, 10, 10, undefined]);
 
-      // TODO: When implementing the general cleanup, just use try catch for every teardown.
-      // Another test validates that an error is thrown.
-      expect(() => rendererIpc.destroy()).toThrow();
-      mainIpc.destroy();
+      expect(() => rendererIpcBp.destroy()).toThrow();
     });
 
     test('The main process handles a command (ipcRenderer bridge pass)', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
       // eslint-disable-next-line max-len
       const ipcRendererBridgePass = createIpcRendererBridgePass(ipcRenderer as unknown as IpcRenderer);
 
       // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRendererBridgePass);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
+      const rendererIpcBp = new RendererIpc<RendererActions, MpActions>(ipcRendererBridgePass);
 
       let thisVal: MainIpc<MpActions, RendererActions> | null = null;
       let event: MainIpcEvent | null = null;
@@ -516,11 +452,11 @@ describe('electron-ipc-extended', () => {
       });
 
       const rVals = await Promise.all([
-        rendererIpc.invoke('mp/cm'),
-        rendererIpc.invoke('mp/cm1', 1, { test: 1 }),
-        rendererIpc.invoke('mp/cm2', 10, { test: 10 }),
-        rendererIpc.invoke('mp/cm1', 1, { test: 1 }),
-        rendererIpc.invoke('mp/cm2', 10, { test: 10 }),
+        rendererIpcBp.invoke('mp/cm'),
+        rendererIpcBp.invoke('mp/cm1', 1, { test: 1 }),
+        rendererIpcBp.invoke('mp/cm2', 10, { test: 10 }),
+        rendererIpcBp.invoke('mp/cm1', 1, { test: 1 }),
+        rendererIpcBp.invoke('mp/cm2', 10, { test: 10 }),
       ]);
 
       expect(senderId).toBe(webContentsMock.id);
@@ -533,20 +469,10 @@ describe('electron-ipc-extended', () => {
       expect(bVal).toBe(22);
       expect(rVals.sort()).toEqual([1, 1, 10, 10, undefined]);
 
-      expect(() => rendererIpc.destroy()).toThrow();
-      mainIpc.destroy();
+      expect(() => rendererIpcBp.destroy()).toThrow();
     });
 
     test('Event listeners are executed in the order they were added', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let n = 1;
       mainIpc.on('renderer/e', () => { n += 2; });
       mainIpc.on('renderer/e', () => { n *= 3; });
@@ -559,36 +485,15 @@ describe('electron-ipc-extended', () => {
     });
 
     test('Call receivers are executed in the order they were added', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let n = 1;
       mainIpc.receive('mp/cl', () => { n += 2; });
       mainIpc.receive('mp/cl', () => { n *= 3; });
 
       rendererIpc.call('mp/cl');
       expect(n).toBe(9);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('An event is listened to once', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let aVal = 0;
       let bVal = 0;
 
@@ -609,21 +514,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(21);
       expect(bVal).toBe(21);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('A call is received once', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let aVal = 0;
       let bVal = 0;
 
@@ -645,21 +538,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(21);
       expect(bVal).toBe(21);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('A command is handled once', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let aVal = 0;
       let bVal = 0;
 
@@ -682,21 +563,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(1);
       expect(bVal).toBe(1);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('Action names do not conflict across event types', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let n = 0;
 
       mainIpc.on('action', async () => {
@@ -716,23 +585,11 @@ describe('electron-ipc-extended', () => {
       await rendererIpc.invoke('action');
 
       expect(n).toBe(111);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
   });
 
   describe('Errors', () => {
     test('An error is thrown when adding a second handler for a command', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       const unsub = mainIpc.handle('mp/cm', async () => { });
       let errorThrown = false;
 
@@ -748,20 +605,9 @@ describe('electron-ipc-extended', () => {
       mainIpc.handle('mp/cm', async () => { });
 
       expect(errorThrown).toBe(true);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('An error is thrown if the handler has been already registered in another instance', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
       const mainIpc2 = new MainIpc<MpActions, RendererActions>(ipcMain);
 
       const unsub = mainIpc.handle('mp/cm', async () => { });
@@ -783,21 +629,9 @@ describe('electron-ipc-extended', () => {
       // Ensure that .destroy() removes the handler from the global registry.
       mainIpc2.destroy();
       mainIpc.handle('mp/cm', async () => { });
-
-      mainIpc.destroy();
-      rendererIpc.destroy();
     });
 
     test('An error thrown in the command handler results in a rejection of the invoke promise', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let i = -1;
 
       mainIpc.handle('mp/cm1', () => {
@@ -833,28 +667,17 @@ describe('electron-ipc-extended', () => {
       expect(errorCount).toBe(1);
       expect(error instanceof Error).toBe(true);
       expect(error?.message).toBe('Test');
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('Invoking a command times out if not handled', async () => {
       const responseTimeout = 1500;
 
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(
-        ipcRenderer as unknown as IpcRenderer,
-        { responseTimeout },
-      );
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
+      // eslint-disable-next-line max-len
+      const rendererIpc2 = new RendererIpc<RendererActions, MpActions>(ipcRenderer, { responseTimeout });
 
       let error: Error | null = null;
 
-      rendererIpc.invoke('mp/cm1', 1, { test: 1 }).catch((err) => {
+      rendererIpc2.invoke('mp/cm1', 1, { test: 1 }).catch((err) => {
         error = err;
       });
 
@@ -865,36 +688,22 @@ describe('electron-ipc-extended', () => {
       expect(error).not.toBe(null);
       expect((error as unknown as Error) instanceof Error).toBe(true);
 
-      rendererIpc.destroy();
-      mainIpc.destroy();
+      rendererIpc2.destroy();
     });
 
     test('An error is thrown when RendererIpc created with bridge pass is destroyed', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
       // eslint-disable-next-line max-len
       const ipcRendererBridgePass = createIpcRendererBridgePass(ipcRenderer as unknown as IpcRenderer);
 
       // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRendererBridgePass);
+      const rendererIpcBp = new RendererIpc<RendererActions, MpActions>(ipcRendererBridgePass);
 
-      expect(() => rendererIpc.destroy()).toThrow();
+      expect(() => rendererIpcBp.destroy()).toThrow();
     });
   });
 
   describe('Cleanup', () => {
     test('An event listener is removed', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let aVal = 0;
       let bVal = 0;
 
@@ -920,21 +729,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(21);
       expect(bVal).toBe(21);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('An event listener is removed via an unsubscribe function', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let aVal = 0;
       let bVal = 0;
 
@@ -960,21 +757,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(21);
       expect(bVal).toBe(21);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('A call receiver is removed', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let aVal = 0;
       let bVal = 0;
 
@@ -1000,21 +785,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(21);
       expect(bVal).toBe(21);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('A call receiver is removed via an unsubscribe function', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let aVal = 0;
       let bVal = 0;
 
@@ -1040,21 +813,9 @@ describe('electron-ipc-extended', () => {
 
       expect(aVal).toBe(21);
       expect(bVal).toBe(21);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('A command handler is removed', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let total = 0;
 
       mainIpc.handle('mp/cm1', (e, a) => a);
@@ -1073,21 +834,9 @@ describe('electron-ipc-extended', () => {
       }
 
       expect(total).toBe(1);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('A command handler is removed via an unsubscribe function', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let total = 0;
 
       const unsub = mainIpc.handle('mp/cm1', (e, a) => a);
@@ -1106,21 +855,9 @@ describe('electron-ipc-extended', () => {
       }
 
       expect(total).toBe(1);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('Obsolete command unsubscribe function does not remove the command', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let total = 0;
 
       const unsub = mainIpc.handle('mp/cm1', (e, a) => a);
@@ -1136,21 +873,9 @@ describe('electron-ipc-extended', () => {
       total += await rendererIpc.invoke('mp/cm1', 1, { test: 1 });
 
       expect(total).toBe(2);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('All channel event listeners are removed', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let n = 0;
 
       mainIpc.on('renderer/e1', () => { n += 1; });
@@ -1166,21 +891,9 @@ describe('electron-ipc-extended', () => {
       rendererIpc.send('renderer/e2', 0, { test: 0 });
 
       expect(n).toBe(211);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('All event listeners are removed', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let n = 0;
 
       mainIpc.on('renderer/e1', () => { n += 1; });
@@ -1196,21 +909,9 @@ describe('electron-ipc-extended', () => {
       rendererIpc.send('renderer/e2', 0, { test: 0 });
 
       expect(n).toBe(111);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('All route call receivers are removed', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let n = 0;
 
       mainIpc.receive('mp/cl1', () => { n += 1; });
@@ -1226,21 +927,9 @@ describe('electron-ipc-extended', () => {
       rendererIpc.call('mp/cl2', 0, { test: 0 });
 
       expect(n).toBe(211);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('All call receivers are removed', () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let n = 0;
 
       mainIpc.receive('mp/cl1', () => { n += 1; });
@@ -1256,21 +945,9 @@ describe('electron-ipc-extended', () => {
       rendererIpc.call('mp/cl2', 0, { test: 0 });
 
       expect(n).toBe(111);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('All command handlers are removed', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let total = 0;
 
       mainIpc.handle('mp/cm1', (e, a) => a);
@@ -1300,21 +977,9 @@ describe('electron-ipc-extended', () => {
       }
 
       expect(total).toBe(11);
-
-      rendererIpc.destroy();
-      mainIpc.destroy();
     });
 
     test('The instance is destroyed', async () => {
-      const ipcMain = new IpcMainMock() as unknown as IpcMain;
-      const ipcRenderer = new IpcRendererMock(ipcMain as unknown as IpcMainMock);
-      const webContentsMock = new WebContentsMock(ipcRenderer as unknown as IpcRendererMock);
-      (ipcMain as unknown as IpcMainMock).setDependencies(ipcRenderer, webContentsMock);
-
-      // eslint-disable-next-line max-len
-      const rendererIpc = new RendererIpc<RendererActions, MpActions>(ipcRenderer as unknown as IpcRenderer);
-      const mainIpc = new MainIpc<MpActions, RendererActions>(ipcMain);
-
       let n = 0;
 
       mainIpc.on('action', async () => {
