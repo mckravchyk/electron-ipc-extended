@@ -9,16 +9,29 @@ import type {
 
 import { MainIpc, type MainIpcEvent, type FrameTarget } from './main_ipc';
 
-import { RendererIpc, type RendererIpcEvent } from './renderer_ipc';
+import {
+  RendererIpc,
+  createIpcRendererBridgePass,
+  type RendererIpcEvent,
+  type IpcRendererDep,
+} from './renderer_ipc';
 
-import { Ipc, DEFAULT_RESPONSE_TIMEOUT, type Options } from './ipc';
+import {
+  Ipc,
+  DEFAULT_RESPONSE_TIMEOUT,
+  type Options,
+  type NativeIpcDep,
+} from './ipc';
 
 export {
   MainIpc,
   RendererIpc,
   Ipc,
+  createIpcRendererBridgePass,
   DEFAULT_RESPONSE_TIMEOUT,
   type Options,
+  type NativeIpcDep,
+  type IpcRendererDep,
   type MainIpcEvent,
   type RendererIpcEvent,
   type IpcActionParameters,
