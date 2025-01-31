@@ -19,7 +19,7 @@ import type { MainIpcEvent } from './main_ipc';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, max-len
 type IpcEventParameters<Event> = [event: Event, ...args: any[]];
 
-export type MessageId = `ipce_${string}`;
+export type MessageId = `eipce_${string}`;
 export type unsubscribeFn = () => void;
 
 export interface Envelope<P extends unknown[] = unknown[]> {
@@ -182,7 +182,7 @@ export abstract class Ipc<
     send: (messageId: MessageId) => void,
     senderId: number,
   ): Promise<unknown> {
-    const messageId = `ipce_${generateId()}` as const;
+    const messageId = `eipce_${generateId()}` as const;
 
     const p = new ExternalPromise<unknown>();
 
@@ -635,7 +635,7 @@ export abstract class Ipc<
     messageId?: MessageId,
   ): Envelope<T> {
     return {
-      messageId: messageId || `ipce_${generateId()}`,
+      messageId: messageId || `eipce_${generateId()}`,
       actionName,
       params,
     };
@@ -649,7 +649,7 @@ export abstract class Ipc<
       && typeof (subject as Envelope<unknown[]>).actionName === 'string'
       && typeof (subject as Envelope<unknown[]>).params === 'object'
       && Array.isArray((subject as Envelope<unknown[]>).params)
-      && (subject as Envelope<unknown[]>).messageId.startsWith('ipce_')
+      && (subject as Envelope<unknown[]>).messageId.startsWith('eipce_')
     );
   }
 }

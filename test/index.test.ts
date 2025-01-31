@@ -123,7 +123,7 @@ describe('electron-ipc-extended', () => {
       expect(thisVal).toBe(mainIpc);
       expect(event).not.toBe(null);
       expect(typeof event!.messageId).toBe('string');
-      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+      expect(event!.messageId.startsWith('eipce_')).toBe(true);
 
       expect(aVal).toBe(44);
       expect(bVal).toBe(44);
@@ -182,7 +182,7 @@ describe('electron-ipc-extended', () => {
       expect(thisVal).toBe(rendererIpc);
       expect(event).not.toBe(null);
       expect(typeof event!.messageId).toBe('string');
-      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+      expect(event!.messageId.startsWith('eipce_')).toBe(true);
 
       expect(aVal).toBe(44);
       expect(bVal).toBe(44);
@@ -235,7 +235,7 @@ describe('electron-ipc-extended', () => {
       expect(thisVal).toBe(rendererIpc);
       expect(event).not.toBe(null);
       expect(typeof event!.messageId).toBe('string');
-      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+      expect(event!.messageId.startsWith('eipce_')).toBe(true);
 
       expect(aVal).toBe(22);
       expect(bVal).toBe(22);
@@ -295,7 +295,7 @@ describe('electron-ipc-extended', () => {
       expect(thisVal).toBe(rendererIpc);
       expect(event).not.toBe(null);
       expect(typeof event!.messageId).toBe('string');
-      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+      expect(event!.messageId.startsWith('eipce_')).toBe(true);
 
       expect(aVal).toBe(44);
       expect(bVal).toBe(44);
@@ -356,7 +356,7 @@ describe('electron-ipc-extended', () => {
       expect(thisVal).toBe(mainIpc);
       expect(event).not.toBe(null);
       expect(typeof event!.messageId).toBe('string');
-      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+      expect(event!.messageId.startsWith('eipce_')).toBe(true);
 
       expect(aVal).toBe(44);
       expect(bVal).toBe(44);
@@ -411,7 +411,7 @@ describe('electron-ipc-extended', () => {
       expect(thisVal).toBe(mainIpc);
       expect(event).not.toBe(null);
       expect(typeof event!.messageId).toBe('string');
-      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+      expect(event!.messageId.startsWith('eipce_')).toBe(true);
 
       expect(aVal).toBe(22);
       expect(bVal).toBe(22);
@@ -467,7 +467,7 @@ describe('electron-ipc-extended', () => {
       expect(thisVal).toBe(rendererIpc);
       expect(event).not.toBe(null);
       expect(typeof event!.messageId).toBe('string');
-      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+      expect(event!.messageId.startsWith('eipce_')).toBe(true);
 
       expect(aVal).toBe(22);
       expect(bVal).toBe(22);
@@ -527,7 +527,7 @@ describe('electron-ipc-extended', () => {
       expect(thisVal).toBe(mainIpc);
       expect(event).not.toBe(null);
       expect(typeof event!.messageId).toBe('string');
-      expect(event!.messageId.startsWith('ipce_')).toBe(true);
+      expect(event!.messageId.startsWith('eipce_')).toBe(true);
 
       expect(aVal).toBe(22);
       expect(bVal).toBe(22);
