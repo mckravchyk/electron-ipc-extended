@@ -14,7 +14,7 @@ import { IpcMainMock, IpcRendererMock, WebContentsMock } from './mocks/electron_
 
 /* eslint-disable func-names, @typescript-eslint/no-this-alias */
 
-type RendererActions = {
+interface RendererActions {
   events: {
     'action': []
     'renderer/e': []

@@ -12,14 +12,14 @@ export type IpcActionParameters = unknown[];
  * confusion, it is recommended to prefix the channels with the name of the emitter (for events)
  * or receiver (for calls and commands) - i.e. 'tabs/create', 'menus/open'.
  */
-export type IpcActionDomain = Record<string, IpcActionParameters>;
+export type IpcActionDomain<T extends string = string> = Record<T, IpcActionParameters>;
 
 export interface IpcInvokeAction {
   params: IpcActionParameters,
   returnVal: unknown
 }
 
-export type IpcInvokeActionDomain = Record<string, IpcInvokeAction>;
+export type IpcInvokeActionDomain<T extends string = string> = Record<T, IpcInvokeAction>;
 
 export interface IpcActions {
   /**
