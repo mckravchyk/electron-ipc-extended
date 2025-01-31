@@ -206,6 +206,25 @@ export abstract class Ipc<
   /**
    * Listens for an event.
    */
+  public addListener<
+    Events extends OtherActions['events'],
+    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+  >(
+    channel: Channel,
+    listener: (this: this, event: Event, ...args: Args) => void,
+  ): unsubscribeFn {
+    return Ipc.addListener(
+      this.listeners_,
+      channel as string,
+      listener as IpcEventListener<Event>,
+      false,
+    );
+  }
+
+  /**
+   * Listens for an event.
+   */
   public on<
     Events extends OtherActions['events'],
     Channel extends (Events extends IpcActionDomain ? keyof Events : never),
@@ -222,6 +241,9 @@ export abstract class Ipc<
     );
   }
 
+  /**
+   * Listens for an event, once.
+   */
   public once<
     Events extends OtherActions['events'],
     Channel extends (Events extends IpcActionDomain ? keyof Events : never),
@@ -311,6 +333,20 @@ export abstract class Ipc<
   /**
    * Removes an event listener.
    */
+  public off<
+    Events extends OtherActions['events'],
+    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+  >(
+    channel: Channel,
+    listener: (this: this, event: Event, ...args: Args) => void,
+  ): void {
+    Ipc.removeListener(this.listeners_, channel, listener);
+  }
+
+  /**
+   * Removes an event listener.
+   */
   public removeListener<
     Events extends OtherActions['events'],
     Channel extends (Events extends IpcActionDomain ? keyof Events : never),
@@ -319,17 +355,7 @@ export abstract class Ipc<
     channel: Channel,
     listener: (this: this, event: Event, ...args: Args) => void,
   ): void {
-    const channelListeners = this.listeners_.get(channel) || [];
-
-    for (const entry of channelListeners) {
-      if (entry.listener_ === listener) {
-        const index = channelListeners.indexOf(entry);
-
-        if (index !== -1) {
-          channelListeners.splice(index, 1);
-        }
-      }
-    }
+    Ipc.removeListener(this.listeners_, channel, listener);
   }
 
   /**
@@ -343,17 +369,7 @@ export abstract class Ipc<
     channel: Channel,
     receiver: (this: this, event: Event, ...args: Args) => void,
   ): void {
-    const channelReceivers = this.receivers_.get(channel) || [];
-
-    for (const entry of channelReceivers) {
-      if (entry.listener_ === receiver) {
-        const index = channelReceivers.indexOf(entry);
-
-        if (index !== -1) {
-          channelReceivers.splice(index, 1);
-        }
-      }
-    }
+    Ipc.removeListener(this.receivers_, channel, receiver);
   }
 
   /**
@@ -590,6 +606,24 @@ export abstract class Ipc<
     entries.push(entry);
 
     return () => { Ipc.removeListenerById(listeners, channel, id); };
+  }
+
+  private static removeListener<E>(
+    listeners: Map<string, ListenerEntry<E>[]>,
+    channel: string,
+    listener: IpcEventListener<E>,
+  ): void {
+    const channelListeners = listeners.get(channel) || [];
+
+    for (const entry of channelListeners) {
+      if (entry.listener_ === listener) {
+        const index = channelListeners.indexOf(entry);
+
+        if (index !== -1) {
+          channelListeners.splice(index, 1);
+        }
+      }
+    }
   }
 
   private static emitEvent<E, SA extends IpcActions, OA extends IpcActions>(

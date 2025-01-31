@@ -109,12 +109,12 @@ describe('electron-ipc-extended', () => {
         senderId = e.sender.id;
       });
 
-      mainIpc.on('renderer/e1', (e, a, b) => {
+      mainIpc.addListener('renderer/e1', (e, a, b) => {
         aVal += a;
         bVal += b.test;
       });
 
-      mainIpc.on('renderer/e1', (e, a, b) => {
+      mainIpc.addListener('renderer/e1', (e, a, b) => {
         aVal += a;
         bVal += b.test;
       });
@@ -238,7 +238,7 @@ describe('electron-ipc-extended', () => {
       let aVal = 0;
       let bVal = 0;
 
-      rendererIpc.on('mp/e', function (e) {
+      rendererIpc.addListener('mp/e', function (e) {
         event = e;
         thisVal = this;
       });
@@ -248,7 +248,7 @@ describe('electron-ipc-extended', () => {
         bVal += b.test;
       });
 
-      rendererIpc.on('mp/e1', (e, a, b) => {
+      rendererIpc.addListener('mp/e1', (e, a, b) => {
         aVal += a;
         bVal += b.test;
       });
@@ -725,6 +725,8 @@ describe('electron-ipc-extended', () => {
       mainIpc.removeListener('renderer/e1', c1);
 
       rendererIpc.send('renderer/e1', 1, { test: 1 });
+      rendererIpc.send('renderer/e2', 10, { test: 10 });
+      mainIpc.off('renderer/e2', c2);
       rendererIpc.send('renderer/e2', 10, { test: 10 });
 
       expect(aVal).toBe(21);
