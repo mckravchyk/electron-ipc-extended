@@ -30,26 +30,16 @@ export interface IpcRendererDep extends NativeIpcDep<IpcRendererEvent> {
 }
 
 /**
- * Creates a minimal IpcRenderer dependency that can be passed via Context Bridge.
+ * Creates a minimal IpcRenderer dependency that can be passed via Context Bridge to *trusted*
+ * renderers.
  *
  * This allows to initialize RendererIpc in the main context of the renderer process, even when
- * nodeIntegration is disabled and contextIsolation is enabled. RendererIpc must be initialized
- * in the main context so that event listeners are removed.
+ * nodeIntegration is disabled and contextIsolation is enabled. Initializing RendererIpc in the main
+ * context enables event listener cleanup which would not work via Context Bridge. See the
+ * documentation for more details.
  *
- * The usage is as follows:
- *
- * preload.js:
- *   contextBridge.exposeInMainWorld('ipcRenderer', createIpcRendererBridgePass(ipcRenderer));
- *
- * renderer.js:
- *   const rendererIpc = new RendererIpc(window.ipcRenderer);
- *
- * NOTE: An instance created this way cannot be fully destroyed. Error will be thrown. This is
- * because it can't remove its own listeners to Electron IPC over the bridge.
- *
- * NOTE: This is meant only for renderers that are running local, trusted content. Remote renderers
- * should have the instance fully initialized in the preload script, with the API exposed over well
- * defined functions and masking of event.sender / event.reply.
+ * WARNING: Do not use it to bypass Electron's security measure to not pass the full ipcRenderer
+ * via context bridge. This setup is meant only for local, trusted renderers.
  */
 export function createIpcRendererBridgePass(ipc: IpcRenderer): IpcRendererDep {
   return {
@@ -60,8 +50,7 @@ export function createIpcRendererBridgePass(ipc: IpcRenderer): IpcRendererDep {
 }
 
 /**
- * An extended IPC wrapper for `IpcRenderer` that adds type-safety, support for handling commands
- * in the renderer and some other enhancements.
+ * Renderer IPC.
  *
  * NOTE: Its use over the context bridge is meant only for renderers running local content. It
  * should not be used over the context bridge with remote content (in such case the send method
@@ -101,35 +90,37 @@ export class RendererIpc<
   }
 
   /**
-   * Dispatches an event.
+   * Dispatches an event to the main process.
    */
   public send<
     Events extends RendererActions['events'],
-    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
-    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+    EventName extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[EventName] extends unknown[] ? Events[EventName] : unknown[])
   >(
-    channel: Channel,
+    eventName: EventName,
     ...args: Args
   ): void {
-    this.send_(Ipc.EVENTS_CHANNEL, channel as string, args);
+    this.send_(Ipc.EVENTS_CHANNEL, eventName, args);
   }
 
   /**
-   * Makes a call.
+   * Calls a `route` in the main process.
    */
   public call<
     Calls extends MpActions['calls'],
-    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
-    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
+    Route extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Route] extends unknown[] ? Calls[Route] : unknown[])
   >(
-    channel: Channel,
+    route: Route,
     ...args: Args
   ): void {
-    this.send_(Ipc.CALLS_CHANNEL, channel as string, args);
+    this.send_(Ipc.CALLS_CHANNEL, route, args);
   }
 
   /**
-   * Invokes a command.
+   * Invokes a `command` in the main process.
+   *
+   * @throws When the command response timed out or an error has been thrown in the handler.
    */
   public invoke<
     Commands extends MpActions['commands'],

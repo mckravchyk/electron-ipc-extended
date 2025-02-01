@@ -19,10 +19,28 @@ export interface MainIpcEvent extends IpcMainEvent {
   messageId: MessageId;
 }
 
-export type FrameTarget = { webContents: WebContents, frameProcessId: number, frameId: number };
+/**
+ * Represents a target frame within a webContents.
+ */
+export interface FrameTarget {
+  /**
+   * The webContents associated with the frame.
+   */
+  webContents: WebContents;
+
+  /**
+   * The process ID of the frame.
+   */
+  frameProcessId: number;
+
+  /**
+   * The frame ID within the process.
+   */
+  frameId: number;
+}
 
 /**
- * An extended IPC wrapper for `IpcMain` that adds type-safety and some enhancements.
+ * Main process IPC.
  */
 export class MainIpc<
   MpActions extends IpcActions = UntypedIpcActions,
@@ -40,37 +58,39 @@ export class MainIpc<
   }
 
   /**
-   * Dispatches an event.
+   * Dispatches an event to the `target`.
    */
   public send<
     Events extends MpActions['events'],
-    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
-    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+    EventName extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[EventName] extends unknown[] ? Events[EventName] : unknown[])
   >(
     target: WebContents | FrameTarget,
-    channel: Channel,
+    eventName: EventName,
     ...args: Args
   ): void {
-    this.send_(target, Ipc.EVENTS_CHANNEL, channel as string, args);
+    this.send_(target, Ipc.EVENTS_CHANNEL, eventName, args);
   }
 
   /**
-   * Makes a call.
+   * Calls a `route` in the `target`.
    */
   public call<
     Calls extends RenderersActions['calls'],
-    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
-    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
+    Route extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Route] extends unknown[] ? Calls[Route] : unknown[])
   >(
     target: WebContents | FrameTarget,
-    channel: Channel,
+    route: Route,
     ...args: Args
   ): void {
-    this.send_(target, Ipc.CALLS_CHANNEL, channel as string, args);
+    this.send_(target, Ipc.CALLS_CHANNEL, route, args);
   }
 
   /**
-   * Invokes a command.
+   * Invokes a `command` in the `target`.
+   *
+   * @throws When the command response timed out or an error has been thrown in the handler.
    */
   public invoke<
     Commands extends RenderersActions['commands'],

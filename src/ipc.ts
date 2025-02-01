@@ -208,18 +208,13 @@ export abstract class Ipc<
    */
   public addListener<
     Events extends OtherActions['events'],
-    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
-    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+    EventName extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[EventName] extends unknown[] ? Events[EventName] : unknown[])
   >(
-    channel: Channel,
+    eventName: EventName,
     listener: (this: this, event: Event, ...args: Args) => void,
   ): unsubscribeFn {
-    return Ipc.addListener(
-      this.listeners_,
-      channel as string,
-      listener as IpcEventListener<Event>,
-      false,
-    );
+    return Ipc.addListener(this.listeners_, eventName, listener as IpcEventListener<Event>, false);
   }
 
   /**
@@ -227,18 +222,13 @@ export abstract class Ipc<
    */
   public on<
     Events extends OtherActions['events'],
-    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
-    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+    EventName extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[EventName] extends unknown[] ? Events[EventName] : unknown[])
   >(
-    channel: Channel,
+    eventName: EventName,
     listener: (this: this, event: Event, ...args: Args) => void,
   ): unsubscribeFn {
-    return Ipc.addListener(
-      this.listeners_,
-      channel as string,
-      listener as IpcEventListener<Event>,
-      false,
-    );
+    return Ipc.addListener(this.listeners_, eventName, listener as IpcEventListener<Event>, false);
   }
 
   /**
@@ -246,18 +236,13 @@ export abstract class Ipc<
    */
   public once<
     Events extends OtherActions['events'],
-    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
-    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+    EventName extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[EventName] extends unknown[] ? Events[EventName] : unknown[])
   >(
-    channel: Channel,
+    eventName: EventName,
     listener: (this: this, event: Event, ...args: Args) => void,
   ) : unsubscribeFn {
-    return Ipc.addListener(
-      this.listeners_,
-      channel as string,
-      listener as IpcEventListener<Event>,
-      true,
-    );
+    return Ipc.addListener(this.listeners_, eventName, listener as IpcEventListener<Event>, true);
   }
 
   /**
@@ -265,38 +250,34 @@ export abstract class Ipc<
    */
   public receive<
     Calls extends SelfActions['calls'],
-    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
-    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
+    Route extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Route] extends unknown[] ? Calls[Route] : unknown[])
   >(
-    channel: Channel,
+    route: Route,
     receiver: (this: this, event: Event, ...args: Args) => void,
   ): unsubscribeFn {
-    return Ipc.addListener(
-      this.receivers_,
-      channel as string,
-      receiver as IpcEventListener<Event>,
-      false,
-    );
+    return Ipc.addListener(this.receivers_, route, receiver as IpcEventListener<Event>, false);
   }
 
+  /**
+   * Receives a call, once.
+   */
   public receiveOnce<
     Calls extends SelfActions['calls'],
-    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
-    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
+    Route extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Route] extends unknown[] ? Calls[Route] : unknown[])
   >(
-    channel: Channel,
+    route: Route,
     receiver: (this: this, event: Event, ...args: Args) => void,
   ): unsubscribeFn {
-    return Ipc.addListener(
-      this.receivers_,
-      channel as string,
-      receiver as IpcEventListener<Event>,
-      true,
-    );
+    return Ipc.addListener(this.receivers_, route, receiver as IpcEventListener<Event>, true);
   }
 
   /**
    * Handles a command.
+   *
+   * @throws if a handler has already been registered for the command (also when it was registered
+   * by another instance).
    */
   public handle<
     Commands extends SelfActions['commands'],
@@ -307,13 +288,15 @@ export abstract class Ipc<
     command: Command,
     handler: (this: this, event: Event, ...args: Args) => CbReturnVal,
   ): unsubscribeFn {
-    return this.registerCommandHandler_(
-      command as string,
-      handler as IpcCommandHandler<Event>,
-      false,
-    );
+    return this.registerCommandHandler_(command, handler as IpcCommandHandler<Event>, false);
   }
 
+  /**
+   * Handles a command, once.
+   *
+   * @throws if a handler has already been registered for the command (also when it was registered
+   * by another instance).
+   */
   public handleOnce<
     Commands extends SelfActions['commands'],
     Command extends (Commands extends IpcInvokeActionDomain ? keyof Commands : never),
@@ -323,11 +306,7 @@ export abstract class Ipc<
     command: Command,
     handler: (this: this, event: Event, ...args: Args) => CbReturnVal,
   ): unsubscribeFn {
-    return this.registerCommandHandler_(
-      command as string,
-      handler as IpcCommandHandler<Event>,
-      true,
-    );
+    return this.registerCommandHandler_(command, handler as IpcCommandHandler<Event>, true);
   }
 
   /**
@@ -335,13 +314,13 @@ export abstract class Ipc<
    */
   public off<
     Events extends OtherActions['events'],
-    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
-    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+    EventName extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[EventName] extends unknown[] ? Events[EventName] : unknown[])
   >(
-    channel: Channel,
+    eventName: EventName,
     listener: (this: this, event: Event, ...args: Args) => void,
   ): void {
-    Ipc.removeListener(this.listeners_, channel, listener);
+    Ipc.removeListener(this.listeners_, eventName, listener as IpcEventListener<Event>);
   }
 
   /**
@@ -349,13 +328,13 @@ export abstract class Ipc<
    */
   public removeListener<
     Events extends OtherActions['events'],
-    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
-    Args extends (Events[Channel] extends unknown[] ? Events[Channel] : unknown[])
+    EventName extends (Events extends IpcActionDomain ? keyof Events : never),
+    Args extends (Events[EventName] extends unknown[] ? Events[EventName] : unknown[])
   >(
-    channel: Channel,
+    eventName: EventName,
     listener: (this: this, event: Event, ...args: Args) => void,
   ): void {
-    Ipc.removeListener(this.listeners_, channel, listener);
+    Ipc.removeListener(this.listeners_, eventName, listener as IpcEventListener<Event>);
   }
 
   /**
@@ -363,13 +342,13 @@ export abstract class Ipc<
    */
   public removeReceiver<
     Calls extends SelfActions['calls'],
-    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
-    Args extends (Calls[Channel] extends unknown[] ? Calls[Channel] : unknown[])
+    Route extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Args extends (Calls[Route] extends unknown[] ? Calls[Route] : unknown[])
   >(
-    channel: Channel,
+    route: Route,
     receiver: (this: this, event: Event, ...args: Args) => void,
   ): void {
-    Ipc.removeListener(this.receivers_, channel, receiver);
+    Ipc.removeListener(this.receivers_, route, receiver as IpcEventListener<Event>);
   }
 
   /**
@@ -385,16 +364,16 @@ export abstract class Ipc<
   }
 
   /**
-   * Removes all event listeners for a channel or all if a channel is not set.
+   * Removes all event listeners for `eventName` or all if not specified.
    */
   public removeAllListeners<
     Events extends OtherActions['events'],
-    Channel extends (Events extends IpcActionDomain ? keyof Events : never),
+    EventName extends (Events extends IpcActionDomain ? keyof Events : never),
   >(
-    channel?: Channel,
+    eventName?: EventName,
   ): void {
-    if (channel) {
-      this.listeners_.delete(channel);
+    if (eventName) {
+      this.listeners_.delete(eventName);
     }
     else {
       this.listeners_.clear();
@@ -402,16 +381,16 @@ export abstract class Ipc<
   }
 
   /**
-   * Removes all call receivers for a channel or all if a channel is not set.
+   * Removes all call receivers for `route` or all if not specified.
    */
   public removeAllReceivers<
     Calls extends SelfActions['calls'],
-    Channel extends (Calls extends IpcActionDomain ? keyof Calls : never),
+    Route extends (Calls extends IpcActionDomain ? keyof Calls : never),
   >(
-    channel?: Channel,
+    route?: Route,
   ): void {
-    if (channel) {
-      this.receivers_.delete(channel);
+    if (route) {
+      this.receivers_.delete(route);
     }
     else {
       this.receivers_.clear();

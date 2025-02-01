@@ -1,1 +1,0 @@
-Full example showing IPC action definitions split across modules.
