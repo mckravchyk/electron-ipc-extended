@@ -38,8 +38,9 @@
   "keywords": [
     "electron",
     "ipc",
+    "types",
+    "typescript",
     "typed",
-    "typed-ipc",
     "electron-typed-ipc"
   ],
   "peerDependencies": {
