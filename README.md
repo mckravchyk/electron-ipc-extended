@@ -73,7 +73,7 @@ ipc.handle('init', async () => {
 
 ```
 
-The example assumes renderer.ts is a preload script or a renderer with nodeIntegration enabled (not recommended, even for trusted renderers). See [the tutorial](../tutorial.md#passing-rendereripc-through-context-bridge) for information about initializing [RendererIpc](./docs/api/renderer_ipc.md) in the main context of a nodeIntegration disabled renderer.
+The example assumes renderer.ts is a preload script or a renderer with nodeIntegration enabled (not recommended, even for trusted renderers). See [the tutorial](./docs/tutorial.md#passing-rendereripc-through-context-bridge) for information about initializing [RendererIpc](./docs/api/renderer_ipc.md) in the main context of a nodeIntegration disabled renderer.
 
 ## Documentation
 
