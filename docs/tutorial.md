@@ -242,6 +242,38 @@ export interface IpcActions {
 }
 ```
 
-## Initializing RendererIpc in nodeIntegration disabled renderer
+## Passing RendererIpc through Context Bridge
 
-See [createIpcRendererBridgePass()](./api/functions.md#createipcrendererbridgepassipc)
+If the renderer's content is not trusted and remote, neither [ipcRenderer](https://www.electronjs.org/docs/latest/api/context-bridge#exposing-ipcrenderer) nor [RendererIpc](./api/renderer_ipc.md) should ever leave the preload script. IPC calls [should be exposed through tightly defined functions](https://www.electronjs.org/docs/latest/api/context-bridge#exposing-ipcrenderer).
+
+However, if the renderer is trusted, most of the app logic lives in the main context of the renderer (rather than the preload one). It would not be feasible to expose every single API call through the [Context Bridge](https://www.electronjs.org/docs/latest/api/context-bridge), while enabling nodeIntegration in a trusted renderer is still a security risk because it greatly increases the attack surface. Therefore, it would desirable to have full access to `RendererIpc` in such renderers.
+
+It is not possible to pass neither `ipcRenderer` nor `RendererIpc` through the Context Bridge. However, [createIpcRendererBridgePass()](./api/functions.md#createipcrendererbridgepassipc) can be passed and `RendererIpc` will be initialized directly in the main context.
+
+*preload.js*
+```javascript
+const { ipcRenderer } = require('electron');
+
+// Only if the renderer is local and trusted!
+contextBridge.exposeInMainWorld('ipcRenderer', createIpcRendererBridgePass(ipcRenderer));
+
+```
+
+*renderer.js*
+```javascript
+const rendererIpc = new RendererIpc(window.ipcRenderer);
+```
+
+If there's a need to receive IPC actions in the preload script, just create another instance in the preload script.
+
+*preload.js*
+```javascript
+const { ipcRenderer } = require('electron');
+
+// Only if the renderer is local and trusted!
+contextBridge.exposeInMainWorld('ipcRenderer', createIpcRendererBridgePass(ipcRenderer));
+
+const rendererIpc = new RendererIpc(window.ipcRenderer);
+```
+
+Note that RendererIpc initialized with `createIpcRendererBridgePass()` cannot be destroyed fully (over the context bridge) and .`destroy()` will throw an error. However, you can `.removeAllListeners()`, `.removeAllReceivers()` and `.removeAllHandlers()` as a workaround.

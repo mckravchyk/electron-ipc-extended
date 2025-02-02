@@ -8,9 +8,16 @@ electron-ipc-extended adds type-safety and awaitable renderer commands to Electr
 npm install electron-ipc-extended --save
 ```
 
+## Features
+
+- Refactor fearlessly with type-safety added to IPC calls
+- Invoke and await commands from the main process to the renderer
+- Set up multiple instances that can be cleaned up independently
+- New call action type that sits between an event and a command (an unawaitable command)
+
 ## Example
 
-This examples demonstrates awaitable renderer commands and initialization of RendererIpc in a *trusted* renderer that has nodeIntegration disabled (if the renderer is not trusted, RendererIpc should not leave the preload script!).
+This simplified example demonstrates awaitable renderer commands and initialization of RendererIpc.
 
 *main.ts*
 ```ts
@@ -24,15 +31,11 @@ export interface MainIpcActions {
 
 const ipc = new MainIpc<MainIpcActions, RendererIpcActions>(ipcMain);
 
-async function createWindow() {
-  const win = new BrowserWindow({
-    webPreferences: {
-      preload: 'renderer_preload.js',
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: true,
-    }
-  });
+async function createAppWindow() {
+  // 
+  const win = new BrowserWindow();
+
+  win.loadFile('index.html');
 
   let resolveReady;
 
@@ -50,17 +53,9 @@ async function createWindow() {
 
 ```
 
-*renderer_preload.ts*
-```ts
-import { ipcRenderer, contextBridge } from 'electron';
-
-import { createIpcRendererBridgePass } from 'electron-ipc-extended';
-
-contextBridge.exposeInMainWorld('ipcRenderer', createIpcRendererBridgePass(ipcRenderer));
-```
-
 *renderer.ts*
 ```ts
+import { ipcRenderer } from 'electron';
 import { RendererIpc } from 'electron-ipc-extended';
 import type { MainIpcActions } from './main';
 
@@ -78,11 +73,13 @@ ipc.handle('init', async () => {
 
 ```
 
+The example assumes renderer.ts is a preload script or a renderer with nodeIntegration enabled (not recommended, even for trusted renderers). See [the tutorial](../tutorial.md#passing-rendereripc-through-context-bridge) for information about initializing [RendererIpc](./docs/api/renderer_ipc.md) in the main context of a nodeIntegration disabled renderer.
+
 ## Documentation
 
 - [Tutorial](./docs/tutorial.md)
 - [API](./docs/api/README.md)
 
-## Child IPC
+## Child Process
 
 See [child-ipc](https://github.com/mckravchyk/child-ipc) - a sister library that adds a similar typed API with events, calls and commands that supports 2-way communication with a Node.js child process.
